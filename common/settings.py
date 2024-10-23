@@ -5,7 +5,7 @@ from typing import Dict
 
 import yaml
 
-from logging_config import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME, config
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
