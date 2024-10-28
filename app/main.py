@@ -8,6 +8,7 @@ from logging import Logger, getLogger
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import Settings, get_settings
 from schedule import every, repeat, run_pending
+from scraper import DynamicHTMLScraper
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -25,12 +26,15 @@ except Exception as e:
     logger.critical(f"Error loading startup configurations: {e}.")
     sys.exit(1)
 
+web_scraper = DynamicHTMLScraper(settings.wasteworks_url)
 
-@repeat(every(30).seconds, settings)
-def job(settings: Settings) -> None:
+
+@repeat(every(30).seconds, settings, web_scraper)
+def job(settings: Settings, scraper: DynamicHTMLScraper) -> None:
     logger.info(
         f"Job running: [url: {settings.wasteworks_url}, email_addresses: {settings.remind.target_emails}, time: {settings.remind.time}]"
     )
+    scraper.render_web_page()
 
 
 while True:
