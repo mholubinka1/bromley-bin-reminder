@@ -2,7 +2,6 @@ services:
   bromley-bin-reminder:
     build: .
     container_name: bin-reminder
-    image: mholubinka1/bin-reminder:latest
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     restart: unless-stopped

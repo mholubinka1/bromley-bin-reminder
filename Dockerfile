@@ -20,6 +20,9 @@ COPY pyproject.toml poetry.lock ./
 RUN ${POETRY_VENV}/bin/pip install poetry
 RUN poetry install --no-root --only main
 
+ENV SELENIUM_CACHE_PATH=/tmp/selenium_cache
+RUN mkdir -p /tmp/selenium_cache && chmod -R 777 /tmp/selenium_cache
+
 RUN apk del .deps
 
 COPY app ./app

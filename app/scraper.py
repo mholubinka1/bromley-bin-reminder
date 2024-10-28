@@ -19,6 +19,8 @@ class DynamicHTMLScraper:
     def render_web_page(self) -> None:
         service = Service()
         options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        options.add_argument("--disable-gpu")
         driver = webdriver.Chrome(service=service, options=options)
         driver.get(self._target_url)
         logger.info(f"Page title: {driver.title}")
