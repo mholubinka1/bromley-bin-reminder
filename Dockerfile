@@ -6,7 +6,7 @@ ENV POETRY_CACHE_DIR=/opt/.cache
 
 RUN apk add --no-cache --virtual .deps g++ gcc musl-dev python3-dev libffi-dev openssl-dev cargo pkgconfig
 RUN apk add libpq-dev
-RUN apk add chromium-chromedriver
+#RUN apk add chromium-chromedriver
 
 RUN python3 -m venv ${POETRY_VENV} \
     && ${POETRY_VENV}/bin/pip install --upgrade pip setuptools wheel
