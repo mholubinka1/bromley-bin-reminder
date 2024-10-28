@@ -1,0 +1,12 @@
+services:
+  bromley-bin-reminder:
+    build: .
+    container_name: bin-reminder
+    image: mholubinka1/bin-reminder:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    restart: unless-stopped
+    environment:
+      URL: ${URL}
+      EMAIL_ADDRESSES: ${EMAIL_ADDRESSES}
+      REMINDER_TIME: ${REMINDER_TIME}

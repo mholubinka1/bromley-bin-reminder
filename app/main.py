@@ -2,14 +2,12 @@ import logging.config
 import os
 import pathlib
 import sys
-from datetime import datetime
+import time
 from logging import Logger, getLogger
 
-from bs4 import BeautifulSoup
-
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import get_settings
-from common.utils import download_webpage
+from common.settings import Settings, get_settings
+from schedule import every, repeat, run_pending
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -17,18 +15,31 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 logger.info("Starting bromley-bin-reminder.")
 
 CONFIG_PATH = os.path.join(pathlib.Path(__file__).parent.resolve(), "config.yml")
-RETRIEs = 5
+RETRIES = 5
 
 try:
-    settings = get_settings(config_file_path=CONFIG_PATH)
+    settings = get_settings()
     print(settings.wasteworks_url)
     print(settings.remind.target_emails)
 except Exception as e:
     logger.critical(f"Error loading startup configurations: {e}.")
     sys.exit(1)
 
+
+@repeat(every(30).seconds, settings)
+def job(settings: Settings) -> None:
+    logger.info(
+        f"Job running: [url: {settings.wasteworks_url}, email_addresses: {settings.remind.target_emails}, time: {settings.remind.time}]"
+    )
+
+
+while True:
+    run_pending()
+    time.sleep(1)
+
+"""
 attempt = 1
-while attempt < RETRIEs:
+while attempt < RETRIES:
     try:
         content = download_webpage(url=settings.wasteworks_url)
         soup = BeautifulSoup(content, "html.parser")
@@ -38,13 +49,14 @@ while attempt < RETRIEs:
         break
     except Exception as e:
         logger.error(f"Failed to download webpage: {e}.")
-        if attempt == RETRIEs:
+        if attempt == RETRIES:
             logger.critical("Retries exhausted. Aborting.")
             sys.exit(1)
-        retries_remaining = RETRIEs - attempt
+        retries_remaining = RETRIES - attempt
         logger.info(f"Retrying. Retries remaining: {retries_remaining}")
         attempt += 1
 
 
 today = datetime.today().date()
 print(soup.prettify)
+"""
