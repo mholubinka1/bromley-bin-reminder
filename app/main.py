@@ -1,45 +1,42 @@
 import logging.config
-import os
-import pathlib
 import sys
 import time
 from logging import Logger, getLogger
 
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import Settings, get_settings
+from common.settings import get_settings
 from schedule import every, repeat, run_pending
-from scraper import DynamicHTMLScraper
+from scraper import WasteworksScraper
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 logger.info("Starting bromley-bin-reminder.")
 
-CONFIG_PATH = os.path.join(pathlib.Path(__file__).parent.resolve(), "config.yml")
-RETRIES = 5
-
 try:
     settings = get_settings()
-    print(settings.wasteworks_url)
-    print(settings.remind.target_emails)
 except Exception as e:
     logger.critical(f"Error loading startup configurations: {e}.")
     sys.exit(1)
 
-web_scraper = DynamicHTMLScraper(settings.wasteworks_url)
+web_scraper = WasteworksScraper(settings.wasteworks_url)
 
 
-@repeat(every(30).seconds, settings, web_scraper)
-def job(settings: Settings, scraper: DynamicHTMLScraper) -> None:
-    logger.info(
-        f"Job running: [url: {settings.wasteworks_url}, email_addresses: {settings.remind.target_emails}, time: {settings.remind.time}]"
-    )
-    scraper.render_web_page()
+@repeat(every(5).seconds, web_scraper)
+def job(scraper: WasteworksScraper) -> None:
+    try:
+        logger.info("Scrape and alert job running.")
+        collections = scraper.get_upcoming_collections()
+        print(collections)
+    except Exception as e:
+        logger.exception(e)
 
 
 while True:
     run_pending()
     time.sleep(1)
+
+RETRIES = 5
 
 """
 attempt = 1
