@@ -22,8 +22,10 @@ class SMTPClient:
     def _login(self, username: str, password: str) -> None:
         self._client.login(username, password)
 
-    def send_mail(self, sender: str, receiver: str, message: MIMEMultipart) -> None:
-        self._client.sendmail(sender, receiver, message.as_string())
+    def send_mail(
+        self, sender: str, receivers: str | List[str], message: MIMEMultipart
+    ) -> None:
+        self._client.sendmail(sender, receivers, message.as_string())
 
 
 class Notify:
@@ -42,5 +44,5 @@ class Notify:
         msg["From"] = sender
         recipients = ", ".join(email_addresses)
         msg["To"] = recipients
-        self._client.send_mail(sender, msg["To"], message=msg)
+        self._client.send_mail(sender, email_addresses, message=msg)
         logger.info(f"Sent notification e-mail to [{recipients}]")

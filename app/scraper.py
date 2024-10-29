@@ -49,6 +49,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
         self._target_url = target_url
 
     def _create_firefox_web_driver(self) -> webdriver.Firefox:
+        # service = webdriver.FirefoxService() #required for local/non-containerised testing
         service = webdriver.FirefoxService(executable_path="/usr/local/bin/geckodriver")
         options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
