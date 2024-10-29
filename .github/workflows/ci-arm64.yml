@@ -1,0 +1,56 @@
+name: Docker Build/Publish Image - ARMv7
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  ARM64_App_Image_Build_and_Push:
+    runs-on: [ ARM64 ]
+    env:
+      DOCKER_REGISTRY: docker.io
+      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/bromley-bin-reminder
+      DOCKER_TARGET_PLATFORM: linux/arm/arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare
+        if: success()
+        id: prepare
+        run: | 
+          echo "docker_platform=${DOCKER_TARGET_PLATFORM}" >> $GITHUB_OUTPUT
+          echo "docker_image=${DOCKER_REGISTRY}/${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+          echo "version=${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: Docker info
+        run: |
+          docker version
+          docker info
+          docker ps
+
+      - name: Docker Login
+        if: success()
+        uses: docker/login-action@v2
+        with: 
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Get Docker Image Tag
+        if: success()
+        id: tag
+        shell: bash
+        run: |
+          branchName=${{ github.ref_name }}
+          if [ $branchName != 'main' ]; then image_tag='dev'; else image_tag='latest'; fi
+          echo "tag=$(echo $image_tag)" >> $GITHUB_OUTPUT
+
+      - name: Docker Build and Push    
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: ${{ steps.prepare.outputs.docker_image }}:${{ steps.tag.outputs.tag }}

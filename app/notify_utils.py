@@ -61,6 +61,10 @@ class WasteCollectionNotification:
                     text-align: center;
                     color: #333;
                 }}
+                h2 {{
+                    text-align: center;
+                    color: #333;
+                }}
                 table {{
                     width: 80%;
                     margin: 20px auto;
@@ -86,7 +90,7 @@ class WasteCollectionNotification:
         </head>
         <body>
             <h1>{tomorrow_str}</h1>
-            <h2>Bin Collecitons</h2>
+            <h2>Bin Collections</h2>
 
             <table>
                 <thead>

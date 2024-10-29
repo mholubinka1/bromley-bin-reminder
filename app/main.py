@@ -31,7 +31,7 @@ smtp_client = SMTPClient(
 notify = Notify(email_client=smtp_client)
 
 
-@repeat(every(5).seconds, settings, web_scraper, notify)
+@repeat(every().day.at(settings.remind.time).seconds, settings, web_scraper, notify)
 def job(
     settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
 ) -> None:
@@ -39,11 +39,10 @@ def job(
         logger.info("Scrape and alert job running.")
         collections = scraper.get_upcoming_collections()
         upcoming_collections = [c for c in collections if c.is_tomorrow]
-        notification = WasteCollectionNotification(collections)
+        notification = WasteCollectionNotification(upcoming_collections)
         notify.send_email(
             notification, settings.smtp.username, settings.remind.target_emails
         )
-        print(upcoming_collections)
     except Exception as e:
         logger.exception(e)
 

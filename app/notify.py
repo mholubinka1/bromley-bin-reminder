@@ -40,7 +40,7 @@ class Notify:
     ) -> None:
         msg = notification.email
         msg["From"] = sender
-        for address in email_addresses:
-            msg["To"] = address
-            self._client.send_mail(sender, msg["To"], message=msg)
-            logger.info(f"Sent notification e-mail to {address}")
+        recipients = ", ".join(email_addresses)
+        msg["To"] = recipients
+        self._client.send_mail(sender, msg["To"], message=msg)
+        logger.info(f"Sent notification e-mail to [{recipients}]")
