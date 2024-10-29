@@ -1,8 +1,14 @@
+import logging.config
 from email.mime.multipart import MIMEMultipart
+from logging import Logger, getLogger
 from smtplib import SMTP
 from typing import List
 
+from common.logging import APP_LOGGER_NAME, config
 from notify_utils import WasteCollectionNotification
+
+logging.config.dictConfig(config)
+logger: Logger = getLogger(APP_LOGGER_NAME)
 
 
 class SMTPClient:
@@ -37,4 +43,4 @@ class Notify:
         for address in email_addresses:
             msg["To"] = address
             self._client.send_mail(sender, msg["To"], message=msg)
-            print("Success!")
+            logger.info(f"Sent notification e-mail to {address}")

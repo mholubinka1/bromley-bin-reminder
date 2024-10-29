@@ -18,7 +18,7 @@ class WasteCollectionNotification:
     email: MIMEMultipart
 
     def __init__(self, upcoming_collections: List[WasteCollection]) -> None:
-        self.email_notification = self._create_email(upcoming_collections)
+        self.email = self._create_email(upcoming_collections)
 
     def _tomorrow(self) -> str:
         tomorrow = datetime.now() + timedelta(days=1)
@@ -37,8 +37,8 @@ class WasteCollectionNotification:
             f"""
             <tr>
                 <td>{collection.service_name}</td>
-                <td style="width: 150px;">
-                    <div style="width: 150px; height: 30px; background-color: {self.service_colours[collection.service_name]};"></div>
+                <td style="width: 80px;">
+                    <div style="width: 80px; height: 30px; background-color: {self.service_colours[collection.service_name]};"></div>
                 </td>
             </tr>"""
             for collection in upcoming_collections
