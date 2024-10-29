@@ -31,8 +31,8 @@ smtp_client = SMTPClient(
 notify = Notify(email_client=smtp_client)
 
 
-# @repeat(every().day.at(settings.remind.time).seconds, settings, web_scraper, notify)
-@repeat(every(5).seconds, settings, web_scraper, notify)
+@repeat(every().day.at(settings.remind.time).seconds, settings, web_scraper, notify)
+# @repeat(every(5).seconds, settings, web_scraper, notify)
 def job(
     settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
 ) -> None:
