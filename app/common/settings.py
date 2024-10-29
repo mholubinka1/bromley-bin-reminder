@@ -4,6 +4,7 @@ import os
 import sys
 from dataclasses import dataclass
 from logging import Logger, getLogger
+from typing import List
 
 from common.logging import APP_LOGGER_NAME, config
 
@@ -13,7 +14,7 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 
 @dataclass
 class RemindSettings:
-    target_emails: str
+    target_emails: List[str]
     time: str
 
 
