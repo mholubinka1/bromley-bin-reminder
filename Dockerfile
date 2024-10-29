@@ -6,8 +6,6 @@ ENV POETRY_CACHE_DIR=/opt/.cache
 
 RUN useradd -ms /bin/bash sel_user
 
-USER sel_user
-
 RUN apt-get install chromium-driver
 
 RUN python3 -m venv ${POETRY_VENV} \
@@ -21,6 +19,8 @@ COPY pyproject.toml poetry.lock ./
 
 RUN ${POETRY_VENV}/bin/pip install poetry
 RUN poetry install --no-root --only main
+
+USER sel_user
 
 COPY app ./app
 
