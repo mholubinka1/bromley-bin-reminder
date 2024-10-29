@@ -7,7 +7,6 @@ from bs4 import BeautifulSoup
 from common.logging import APP_LOGGER_NAME, config
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from waste_utils import WasteCollection, parse_date
@@ -50,12 +49,12 @@ class WasteworksScraper:  # DynamicHTMLScraper
         self._target_url = target_url
 
     def _create_chrome_web_driver(self) -> webdriver.Firefox:
-        service = Service()
+        service = webdriver.FirefoxService()
         options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
         options.add_argument("--disable-gpu")
         options.add_argument("--log-level=3")
-        driver = webdriver.FirefoxOptions(service=service, options=options)
+        driver = webdriver.Firefox(service=service, options=options)
         return driver
 
     @retry()
