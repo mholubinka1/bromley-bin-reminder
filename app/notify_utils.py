@@ -85,7 +85,8 @@ class WasteCollectionNotification:
             </style>
         </head>
         <body>
-            <h1>{tomorrow_str} - Bin Collections: </h1>
+            <h1>{tomorrow_str}</h1>
+            <h2>Bin Collecitons</h2>
 
             <table>
                 <thead>
