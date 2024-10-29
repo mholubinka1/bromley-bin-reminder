@@ -5,7 +5,7 @@ class SMTPClient:
     _client: SMTP
 
     def __init__(self, username: str, password: str, server: str, port: int) -> None:
-        self._client = SMTP("smtp.gmail.com", 587)
+        self._client = SMTP(server, port)
         self._client.starttls()
         self._login(username, password)
 

@@ -1,5 +1,6 @@
 from typing import List
 
+from notify_utils import SMTPClient
 from waste_utils import WasteCollection
 
 
@@ -12,9 +13,10 @@ class WasteCollectionNotification:
 
 
 class Notify:
-    def __init__(self, username: str, password: str):
-        self._username = username
-        self._password = password
+    _client: SMTPClient
+
+    def __init__(self, email_client: SMTPClient):
+        self._client = email_client
 
     def send(self, upcoming_collections: List[WasteCollection]) -> None:
         pass

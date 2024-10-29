@@ -6,6 +6,7 @@ from logging import Logger, getLogger
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import get_settings
 from notify import Notify
+from notify_utils import SMTPClient
 from schedule import every, repeat, run_pending
 from scraper import WasteworksScraper
 
@@ -21,7 +22,13 @@ except Exception as e:
     sys.exit(1)
 
 web_scraper = WasteworksScraper(settings.wasteworks_url)
-notify = Notify(username="test", password="test")
+smtp_client = SMTPClient(
+    username=settings.smtp.username,
+    password=settings.smtp.password,
+    server=settings.smtp.server,
+    port=settings.smtp.port,
+)
+notify = Notify(email_client=smtp_client)
 
 
 @repeat(every(5).seconds, web_scraper, notify)
