@@ -6,12 +6,11 @@ from typing import Any, Callable, List, Optional
 from bs4 import BeautifulSoup
 from common.logging import APP_LOGGER_NAME, config
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from waste_utils import WasteCollection, parse_date
-from webdriver_manager.chrome import ChromeDriverManager
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -50,13 +49,13 @@ class WasteworksScraper:  # DynamicHTMLScraper
     def __init__(self, target_url: str) -> None:
         self._target_url = target_url
 
-    def _create_chrome_web_driver(self) -> webdriver.Chrome:
-        service = Service(ChromeDriverManager().install())
-        options = webdriver.ChromeOptions()
+    def _create_chrome_web_driver(self) -> webdriver.Firefox:
+        service = Service()
+        options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
         options.add_argument("--disable-gpu")
         options.add_argument("--log-level=3")
-        driver = webdriver.Chrome(service=service, options=options)
+        driver = webdriver.FirefoxOptions(service=service, options=options)
         return driver
 
     @retry()
