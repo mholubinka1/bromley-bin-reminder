@@ -43,23 +43,22 @@ def retry(
 
 class WasteworksScraper:  # DynamicHTMLScraper
     _target_url: str
-    _chrome_web_driver: webdriver.Chrome
+    _chrome_web_driver: webdriver.Firefox
 
     def __init__(self, target_url: str) -> None:
         self._target_url = target_url
 
-    def _create_chrome_web_driver(self) -> webdriver.Firefox:
-        service = webdriver.FirefoxService()
+    def _create_firefox_web_driver(self) -> webdriver.Firefox:
+        service = webdriver.FirefoxService(executable_path="/usr/local/bin/geckodriver")
         options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
         options.add_argument("--disable-gpu")
-        options.add_argument("--log-level=3")
         driver = webdriver.Firefox(service=service, options=options)
         return driver
 
     @retry()
     def _render_web_page(self) -> Optional[str]:
-        driver = self._create_chrome_web_driver()
+        driver = self._create_firefox_web_driver()
         driver.get(self._target_url)
         try:
             wait = WebDriverWait(driver, 300)
