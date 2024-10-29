@@ -8,7 +8,7 @@ RUN useradd -ms /bin/bash sel_user
 
 USER sel_user
 
-RUN apt-get install chromium-chromedriver
+RUN apt-get install chromium-driver
 
 RUN python3 -m venv ${POETRY_VENV} \
     && ${POETRY_VENV}/bin/pip install --upgrade pip setuptools wheel
