@@ -55,6 +55,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
         options = webdriver.ChromeOptions()
         options.add_argument("--headless")
         options.add_argument("--disable-gpu")
+        options.add_argument("--log-level=3")
         driver = webdriver.Chrome(service=service, options=options)
         return driver
 
@@ -69,6 +70,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
                     (By.XPATH, "//*[@class='govuk-heading-m waste-service-name']")
                 )
             )
+            logger.info("Rendered WasteWorks webpage.")
             page_source = driver.page_source
             driver.quit()
             return page_source
@@ -78,6 +80,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
             raise Exception(f"Failed to render Wasteworks page: {self._target_url}")
 
     def _extract_collections(self, soup: BeautifulSoup) -> List[WasteCollection]:
+        logger.info("Extracting upcoming collection information.")
         services = soup.find_all("h3", class_="govuk-heading-m waste-service-name")
         collections: List[WasteCollection] = []
         for service in services:
@@ -94,6 +97,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
                         is_tomorrow=is_tomorrow,
                     )
                 )
+        logger.info(f"Found data for {len(collections)} upcoming collections.")
         return collections
 
     def get_upcoming_collections(self) -> List[WasteCollection]:
