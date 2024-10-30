@@ -33,11 +33,11 @@ notify = Notify(email_client=smtp_client)
 
 # @repeat(every(5).seconds, settings, web_scraper, notify)
 @repeat(every().day.at(settings.remind.time), settings, web_scraper, notify)
-def job(
+def daily_job(
     settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
 ) -> None:
     try:
-        logger.info("Scrape and alert job running.")
+        logger.info("Daily scrape and alert job running.")
         collections = scraper.get_upcoming_collections()
         upcoming_collections = [c for c in collections if c.is_tomorrow]
         logger.info(f"{len(upcoming_collections)} collections scheduled for tomorrow.")
@@ -45,7 +45,35 @@ def job(
             services = ", ".join([c.service_name for c in upcoming_collections])
             logger.info(f"Upcoming collections: [{services}]")
             logger.info("Sending notifications about tomorrow's collections.")
-            notification = WasteCollectionNotification(upcoming_collections)
+            notification = WasteCollectionNotification(
+                upcoming_collections, period="tomorrow"
+            )
+            notify.send_email(
+                notification, settings.smtp.username, settings.remind.target_emails
+            )
+    except Exception as e:
+        logger.exception(e)
+
+
+# @repeat(every(5).seconds, settings, web_scraper, notify)
+@repeat(every().monday.at("09:00"), settings, web_scraper, notify)
+def weekly_job(
+    settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
+) -> None:
+    try:
+        logger.info("Weekly scrape and alert job running.")
+        collections = scraper.get_upcoming_collections()
+        this_week_collections = [c for c in collections if c.is_this_week]
+        logger.info(
+            f"{len(this_week_collections)} collections scheduled for this upcoming week."
+        )
+        if len(this_week_collections) != 0:
+            services = ", ".join([c.service_name for c in this_week_collections])
+            logger.info(f"Collections this week: [{services}]")
+            logger.info("Sending notifications about this week's collections.")
+            notification = WasteCollectionNotification(
+                this_week_collections, period="week"
+            )
             notify.send_email(
                 notification, settings.smtp.username, settings.remind.target_emails
             )

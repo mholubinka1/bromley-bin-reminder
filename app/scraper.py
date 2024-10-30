@@ -85,7 +85,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
             service_name = service.get_text(strip=True)
             next_collection = service.find_next("dt", string="Next collection")
             if next_collection:
-                is_tomorrow, next_collection_date = parse_date(
+                is_tomorrow, is_this_week, next_collection_date = parse_date(
                     next_collection.find_next_sibling("dd").get_text(strip=True)
                 )
                 collections.append(
@@ -93,6 +93,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
                         service_name=service_name,
                         next_collection_date=next_collection_date,
                         is_tomorrow=is_tomorrow,
+                        is_this_week=is_this_week,
                     )
                 )
         logger.info(f"Found data for {len(collections)} upcoming collections.")
