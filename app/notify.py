@@ -5,6 +5,7 @@ from smtplib import SMTP
 from typing import List
 
 from common.logging import APP_LOGGER_NAME, config
+from decorator import retry
 from notify_utils import WasteCollectionNotification
 
 logging.config.dictConfig(config)
@@ -12,15 +13,18 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 
 
 class SMTPClient:
+    _username: str
+    _password: str
     _client: SMTP
 
     def __init__(self, username: str, password: str, server: str, port: int) -> None:
         self._client = SMTP(server, port)
         self._client.starttls()
-        self._login(username, password)
+        self._username = username
+        self._password = password
 
-    def _login(self, username: str, password: str) -> None:
-        self._client.login(username, password)
+    def login(self) -> None:
+        self._client.login(self._username, self._password)
 
     def send_mail(
         self, sender: str, receivers: str | List[str], message: MIMEMultipart
@@ -34,12 +38,14 @@ class Notify:
     def __init__(self, email_client: SMTPClient):
         self._client = email_client
 
+    @retry()
     def send_email(
         self,
         notification: WasteCollectionNotification,
         sender: str,
         email_addresses: List[str],
     ) -> None:
+        self._client.login()
         msg = notification.email
         msg["From"] = sender
         recipients = ", ".join(email_addresses)
