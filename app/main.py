@@ -39,7 +39,7 @@ def daily_job(
     try:
         logger.info("Daily scrape and alert job running.")
         collections = scraper.get_upcoming_collections()
-        upcoming_collections = [c for c in collections if c.is_tomorrow]
+        upcoming_collections = collections  # [c for c in collections if c.is_tomorrow]
         logger.info(f"{len(upcoming_collections)} collections scheduled for tomorrow.")
         if len(upcoming_collections) != 0:
             services = ", ".join([c.service_name for c in upcoming_collections])

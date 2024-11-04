@@ -15,21 +15,23 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 class SMTPClient:
     _username: str
     _password: str
-    _client: SMTP
+    _server: str
+    _port: int
 
     def __init__(self, username: str, password: str, server: str, port: int) -> None:
-        self._client = SMTP(server, port)
-        self._client.starttls()
         self._username = username
         self._password = password
-
-    def login(self) -> None:
-        self._client.login(self._username, self._password)
+        self._server = server
+        self._port = port
 
     def send_mail(
         self, sender: str, receivers: str | List[str], message: MIMEMultipart
     ) -> None:
-        self._client.sendmail(sender, receivers, message.as_string())
+        client = SMTP(self._server, self._port)
+        client.starttls()
+        client.login(self._username, self._password)
+        client.sendmail(sender, receivers, message.as_string())
+        client.quit()
 
 
 class Notify:
@@ -45,7 +47,6 @@ class Notify:
         sender: str,
         email_addresses: List[str],
     ) -> None:
-        self._client.login()
         msg = notification.email
         msg["From"] = sender
         recipients = ", ".join(email_addresses)
