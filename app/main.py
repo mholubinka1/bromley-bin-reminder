@@ -64,6 +64,9 @@ def weekly_job(
         logger.info("Weekly scrape and alert job running.")
         collections = scraper.get_upcoming_collections()
         this_week_collections = [c for c in collections if c.is_this_week]
+        this_week_collections = sorted(
+            this_week_collections, key=lambda x: x.next_collection_date
+        )
         logger.info(
             f"{len(this_week_collections)} collections scheduled for this upcoming week."
         )
