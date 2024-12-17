@@ -29,6 +29,7 @@ def is_collection_this_week(current_date: datetime, collection_date: datetime) -
 
 
 def parse_date(date: str) -> Tuple[bool, bool, datetime]:
+    date = re.sub(r"\(.*?\)", "", date)
     date = re.sub(r"\s*\(In Progress\)", "", date)
     date = re.sub(r"\b(\d+)(th|rd|nd|st)\b", r"\1", date)
     date = date.strip()
