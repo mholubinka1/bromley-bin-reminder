@@ -4,6 +4,8 @@ services:
     image: mholubinka1/bromley-bin-reminder:latest
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    volumes:
+      - /home/pi/.config/bin-reminder:/config
     environment:
       URL: ${URL}
       EMAIL_ADDRESSES: ${EMAIL_ADDRESSES}

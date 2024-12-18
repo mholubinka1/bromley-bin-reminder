@@ -1,0 +1,8 @@
+URL='https://recyclingservices.bromley.gov.uk/waste/3652504'
+EMAIL_ADDRESSES='["meholubinka@gmail.com", "sarah_bevan@hotmail.co.uk"]'
+REMINDER_TIME='18:00'
+
+SMTP_USERNAME='bromley.bin.notifications@gmail.com'
+SMTP_PASSWORD='mjtxvonabvtqxuec'
+SMTP_SERVER='smtp.gmail.com'
+SMTP_PORT=587
