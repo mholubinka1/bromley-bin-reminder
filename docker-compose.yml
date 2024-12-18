@@ -6,12 +6,4 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     volumes:
       - /home/pi/.config/bin-reminder:/config
-    environment:
-      URL: ${URL}
-      EMAIL_ADDRESSES: ${EMAIL_ADDRESSES}
-      REMINDER_TIME: ${REMINDER_TIME}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_SERVER: ${SMTP_SERVER}
-      SMTP_PORT: ${SMTP_PORT}
     restart: unless-stopped
