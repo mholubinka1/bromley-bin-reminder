@@ -18,14 +18,16 @@ RUN python3 -m venv ${POETRY_VENV} \
 ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
 WORKDIR /app
+RUN mkdir -p config
+VOLUME /config
 
 COPY pyproject.toml poetry.lock ./
 
 RUN ${POETRY_VENV}/bin/pip install poetry
 RUN poetry install --no-root --only main
-
+ 
 USER sel_user
 
 COPY app ./app
 
-CMD [ "poetry", "run", "python", "./app/main.py"]
+CMD [ "poetry", "run", "python", "./app/main.py", "--config-file", "/config/config.yml"]

@@ -1,10 +1,12 @@
+import argparse
 import logging.config
 import sys
 import time
 from logging import Logger, getLogger
+from typing import Tuple
 
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import ApplicationSettings, get_settings
+from common.settings import ApplicationSettings, ConfigLoader
 from notify import Notify, SMTPClient
 from notify_utils import WasteCollectionNotification
 from schedule import every, repeat, run_pending
@@ -15,20 +17,29 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 
 logger.info("Starting bromley-bin-reminder.")
 
+
+def on_config_update(settings: ApplicationSettings) -> Tuple[WasteworksScraper, Notify]:
+    web_scraper = WasteworksScraper(settings.wasteworks_url)
+    smtp_client = SMTPClient(
+        username=settings.smtp.username,
+        password=settings.smtp.password,
+        server=settings.smtp.server,
+        port=settings.smtp.port,
+    )
+    notify = Notify(email_client=smtp_client)
+    return web_scraper, notify
+
+
 try:
-    settings = get_settings()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config-file")
+    args = parser.parse_args()
+    configLoader = ConfigLoader(args.config_file)
+    settings = configLoader.get_config()
+    web_scraper, notify = on_config_update(settings)
 except Exception as e:
     logger.critical(f"Error loading startup configurations: {e}.")
     sys.exit(1)
-
-web_scraper = WasteworksScraper(settings.wasteworks_url)
-smtp_client = SMTPClient(
-    username=settings.smtp.username,
-    password=settings.smtp.password,
-    server=settings.smtp.server,
-    port=settings.smtp.port,
-)
-notify = Notify(email_client=smtp_client)
 
 
 # @repeat(every(5).seconds, settings, web_scraper, notify)

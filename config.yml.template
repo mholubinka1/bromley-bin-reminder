@@ -1,0 +1,12 @@
+remind:
+  url:
+  email_addresses:
+    - firstname.lastname@provider.com
+    - firstname.lastname@provider.com
+  time: '18:00'
+
+smtp:
+  username:
+  password:
+  server: smtp.gmail.com
+  port: 587

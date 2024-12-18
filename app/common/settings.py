@@ -1,11 +1,10 @@
-import json
 import logging.config
-import os
 import sys
 from dataclasses import dataclass
 from logging import Logger, getLogger
-from typing import List
+from typing import Dict, List
 
+import yaml
 from common.logging import APP_LOGGER_NAME, config
 
 logging.config.dictConfig(config)
@@ -27,35 +26,39 @@ class SMTPSettings:
 
 
 class ApplicationSettings:
-    def __init__(
-        self, url: str, remind_settings: RemindSettings, smtp_settings: SMTPSettings
-    ) -> None:
-        self.wasteworks_url = url
-        self.remind = remind_settings
-        self.smtp = smtp_settings
-
-
-def get_settings() -> ApplicationSettings:
-    try:
-        email_addresses = json.loads(os.environ["EMAIL_ADDRESSES"])
-        reminder_time = os.environ["REMINDER_TIME"]
-        remind_settings = RemindSettings(
-            target_emails=email_addresses, time=reminder_time
+    def __init__(self, yaml_settings: Dict) -> None:
+        self.wasteworks_url = yaml_settings["remind"]["url"]
+        self.remind = RemindSettings(
+            target_emails=yaml_settings["remind"]["email_addresses"],
+            time=yaml_settings["remind"]["time"],
+        )
+        self.smtp = SMTPSettings(
+            username=yaml_settings["smtp"]["username"],
+            password=yaml_settings["smtp"]["password"],
+            server=yaml_settings["smtp"]["server"],
+            port=yaml_settings["smtp"]["port"],
         )
 
-        smtp_username = os.environ["SMTP_USERNAME"]
-        smtp_password = os.environ["SMTP_PASSWORD"]
-        smtp_server = os.environ["SMTP_SERVER"]
-        smtp_port = int(os.environ["SMTP_PORT"])
-        smtp_settings = SMTPSettings(
-            username=smtp_username,
-            password=smtp_password,
-            server=smtp_server,
-            port=smtp_port,
-        )
 
-        url = os.environ["URL"]
-        return ApplicationSettings(url, remind_settings, smtp_settings)
-    except Exception:
-        logger.critical("Failed to load application settings.")
-        sys.exit(1)
+class ConfigLoader:
+    _config: ApplicationSettings
+    _path: str
+
+    def __init__(self, config_path: str) -> None:
+        self._path = config_path
+        self._load_config()
+
+    def get_config(self) -> ApplicationSettings:
+        return self._config
+
+    def _load_config(self) -> None:
+        try:
+            with open(self._path, "r") as file:
+                settings = yaml.safe_load(file)
+            logger.info(f"Successfully loaded settings from {self._path}")
+            self._config = ApplicationSettings(settings)
+        except Exception as e:
+            logger.critical(
+                f"Failed to load application settings from {self._path}: {e}"
+            )
+            sys.exit(1)
