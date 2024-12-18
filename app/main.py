@@ -42,8 +42,8 @@ except Exception as e:
     sys.exit(1)
 
 
-@repeat(every(5).seconds, settings, web_scraper, notify)
-# @repeat(every().day.at(settings.remind.time), settings, web_scraper, notify)
+# @repeat(every(5).seconds, settings, web_scraper, notify)
+@repeat(every().day.at(settings.remind.time), settings, web_scraper, notify)
 def daily_job(
     settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
 ) -> None:
