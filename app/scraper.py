@@ -1,4 +1,5 @@
 import logging.config
+import os
 from logging import Logger, getLogger
 from typing import List, Optional
 
@@ -23,8 +24,12 @@ class WasteworksScraper:  # DynamicHTMLScraper
         self._target_url = target_url
 
     def _create_firefox_web_driver(self) -> webdriver.Firefox:
-        # service = (webdriver.FirefoxService())  # required for local/non-containerised testing
-        service = webdriver.FirefoxService(executable_path="/usr/local/bin/geckodriver")
+        if os.environ.get("DEPLOYMENT", None) == "local":
+            service = webdriver.FirefoxService()
+        else:
+            service = webdriver.FirefoxService(
+                executable_path="/usr/local/bin/geckodriver"
+            )
         options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
         options.add_argument("--disable-gpu")

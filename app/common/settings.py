@@ -40,19 +40,23 @@ class ApplicationSettings:
         )
 
 
-class ConfigReloader:
+class ConfigLoader:
+    _config: ApplicationSettings
     _path: str
 
     def __init__(self, config_path: str) -> None:
         self._path = config_path
-        self.settings = self._load_config()
+        self._load_config()
 
-    def _load_config(self) -> ApplicationSettings:
+    def get_config(self) -> ApplicationSettings:
+        return self._config
+
+    def _load_config(self) -> None:
         try:
             with open(self._path, "r") as file:
                 settings = yaml.safe_load(file)
             logger.info(f"Successfully loaded settings from {self._path}")
-            return ApplicationSettings(settings)
+            self._config = ApplicationSettings(settings)
         except Exception as e:
             logger.critical(
                 f"Failed to load application settings from {self._path}: {e}"
