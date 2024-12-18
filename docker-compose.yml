@@ -2,6 +2,7 @@ services:
   bromley-bin-reminder:
     container_name: bin-reminder
     image: mholubinka1/bromley-bin-reminder:latest
+    pull_policy: always
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     volumes:
