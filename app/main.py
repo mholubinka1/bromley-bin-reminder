@@ -67,7 +67,7 @@ def daily_job(
 
 
 # @repeat(every(5).seconds, settings, web_scraper, notify)
-@repeat(every().monday.at("09:00"), settings, web_scraper, notify)
+@repeat(every().sunday.at("18:00"), settings, web_scraper, notify)
 def weekly_job(
     settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
 ) -> None:
