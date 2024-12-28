@@ -24,7 +24,8 @@ def is_collection_tomorrow(current_date: datetime, collection_date: datetime) ->
 
 
 def is_collection_this_week(current_date: datetime, collection_date: datetime) -> bool:
-    next_week = current_date + timedelta(days=7)
+    # this week includes the following monday to avoid the situation where monday bins aren't notified a week in advance
+    next_week = current_date + timedelta(days=8)
     return collection_date.date() < next_week.date()
 
 
