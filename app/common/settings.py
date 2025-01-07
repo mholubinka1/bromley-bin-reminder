@@ -19,7 +19,7 @@ class RemindSettings:
 
 @dataclass
 class SMTPSettings:
-    username: Optional[str]
+    username: str
     password: Optional[str]
     server: str
     port: int

@@ -19,13 +19,13 @@ def is_null_or_empty(s: Optional[str]) -> bool:
 
 
 class SMTPClient:
-    _username: Optional[str]
+    _username: str
     _password: Optional[str]
     _server: str
     _port: int
 
     def __init__(
-        self, username: Optional[str], password: Optional[str], server: str, port: int
+        self, username: str, password: Optional[str], server: str, port: int
     ) -> None:
         self._username = username
         self._password = password
