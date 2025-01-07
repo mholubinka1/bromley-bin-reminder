@@ -2,7 +2,7 @@ import logging.config
 from email.mime.multipart import MIMEMultipart
 from logging import Logger, getLogger
 from smtplib import SMTP
-from typing import List
+from typing import List, Optional
 
 from common.logging import APP_LOGGER_NAME, config
 from decorator import retry
@@ -12,13 +12,19 @@ logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 
+def is_null_or_empty(s: Optional[str]) -> bool:
+    return not s or s.strip() == ""
+
+
 class SMTPClient:
-    _username: str
-    _password: str
+    _username: Optional[str]
+    _password: Optional[str]
     _server: str
     _port: int
 
-    def __init__(self, username: str, password: str, server: str, port: int) -> None:
+    def __init__(
+        self, username: Optional[str], password: Optional[str], server: str, port: int
+    ) -> None:
         self._username = username
         self._password = password
         self._server = server
@@ -29,7 +35,8 @@ class SMTPClient:
     ) -> None:
         client = SMTP(self._server, self._port)
         client.starttls()
-        client.login(self._username, self._password)
+        if not (is_null_or_empty(self._username) or is_null_or_empty(self._username)):
+            client.login(str(self._username), str(self._password))
         client.sendmail(sender, receivers, message.as_string())
         client.quit()
 
