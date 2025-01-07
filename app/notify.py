@@ -13,17 +13,19 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 
 
 def is_null_or_empty(s: Optional[str]) -> bool:
-    return not s or s.strip() == ""
+    if not s:
+        return False
+    return s.strip() == ""
 
 
 class SMTPClient:
-    _username: Optional[str]
+    _username: str
     _password: Optional[str]
     _server: str
     _port: int
 
     def __init__(
-        self, username: Optional[str], password: Optional[str], server: str, port: int
+        self, username: str, password: Optional[str], server: str, port: int
     ) -> None:
         self._username = username
         self._password = password
@@ -35,7 +37,7 @@ class SMTPClient:
     ) -> None:
         client = SMTP(self._server, self._port)
         client.starttls()
-        if not (is_null_or_empty(self._username) or is_null_or_empty(self._username)):
+        if not is_null_or_empty(self._password):
             client.login(str(self._username), str(self._password))
         client.sendmail(sender, receivers, message.as_string())
         client.quit()

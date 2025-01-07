@@ -6,7 +6,7 @@ remind:
   time: '18:00'
 
 smtp:
-  username:
-  password:
+  username: sender.email.address@provider.com #this field is required
+  password: $password #if this is blank, no authentication is used
   server: smtp.gmail.com
   port: 587
