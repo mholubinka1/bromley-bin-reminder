@@ -2,7 +2,7 @@ import logging.config
 import sys
 from dataclasses import dataclass
 from logging import Logger, getLogger
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import yaml
 from common.logging import APP_LOGGER_NAME, config
@@ -19,8 +19,8 @@ class RemindSettings:
 
 @dataclass
 class SMTPSettings:
-    username: str
-    password: str
+    username: Optional[str]
+    password: Optional[str]
     server: str
     port: int
 
