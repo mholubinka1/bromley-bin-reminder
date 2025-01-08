@@ -4,18 +4,13 @@ from logging import Logger, getLogger
 from smtplib import SMTP
 from typing import List, Optional
 
+from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
-from decorator import retry
-from notify_utils import WasteCollectionNotification
+from common.settings import is_null_or_empty
+from notification import WasteCollectionNotification
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
-
-
-def is_null_or_empty(s: Optional[str]) -> bool:
-    if not s:
-        return False
-    return s.strip() == ""
 
 
 class SMTPClient:
