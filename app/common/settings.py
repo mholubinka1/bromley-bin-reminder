@@ -10,6 +10,14 @@ from common.logging import APP_LOGGER_NAME, config
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
+DEFAULT_DAILY_POLL_TIME = "18:00"
+
+
+def is_null_or_empty(s: Optional[str]) -> bool:
+    if not s:
+        return False
+    return s.strip() == ""
+
 
 @dataclass
 class RemindSettings:
@@ -62,3 +70,18 @@ class ConfigLoader:
                 f"Failed to load application settings from {self._path}: {e}"
             )
             sys.exit(1)
+
+
+def validate_settings(settings: ApplicationSettings) -> None:
+    if is_null_or_empty(settings.wasteworks_url):
+        raise RuntimeError("A valid wasteworks URL must be provided.")
+    if is_null_or_empty(settings.remind.time):
+        logger.warning(
+            f"Custom daily poll time not provided, using default: {DEFAULT_DAILY_POLL_TIME}"
+        )
+        settings.remind.time = DEFAULT_DAILY_POLL_TIME
+    if is_null_or_empty(settings.smtp.username):
+        raise RuntimeError("A valid sender e-mail address must be provided.")
+    if is_null_or_empty(settings.smtp.server) or settings.smtp.port is None:
+        raise RuntimeError("SMTP server and port configurations must be provided.")
+    return

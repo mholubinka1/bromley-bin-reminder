@@ -6,9 +6,9 @@ from logging import Logger, getLogger
 from typing import Tuple
 
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import ApplicationSettings, ConfigLoader
+from common.settings import ApplicationSettings, ConfigLoader, validate_settings
+from notification import WasteCollectionNotification
 from notify import Notify, SMTPClient
-from notify_utils import WasteCollectionNotification
 from schedule import every, repeat, run_pending
 from scraper import WasteworksScraper
 
@@ -18,7 +18,7 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 logger.info("Starting bromley-bin-reminder.")
 
 
-def on_config_update(settings: ApplicationSettings) -> Tuple[WasteworksScraper, Notify]:
+def on_startup(settings: ApplicationSettings) -> Tuple[WasteworksScraper, Notify]:
     web_scraper = WasteworksScraper(settings.wasteworks_url)
     smtp_client = SMTPClient(
         username=settings.smtp.username,
@@ -36,9 +36,10 @@ try:
     args = parser.parse_args()
     configLoader = ConfigLoader(args.config_file)
     settings = configLoader.get_config()
-    web_scraper, notify = on_config_update(settings)
+    validate_settings(settings)
+    web_scraper, notify = on_startup(settings)
 except Exception as e:
-    logger.critical(f"Error loading startup configurations: {e}.")
+    logger.critical(f"Error loading startup configuration: {e}.")
     sys.exit(1)
 
 
