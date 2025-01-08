@@ -5,6 +5,8 @@ services:
     pull_policy: always
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    environment:
+      ENV_FLAG: docker
     volumes:
       - /home/pi/.config/bin-reminder:/config
     restart: unless-stopped
