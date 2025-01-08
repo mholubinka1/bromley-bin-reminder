@@ -13,7 +13,7 @@
             "justMyCode": true,
             "args": [
                 "--config-file",
-                "C:\\Users\\mehol\\git\\bromley-bin-reminder\\config.yml"
+                "./config/config.yml"
             ],
         }
     ]
