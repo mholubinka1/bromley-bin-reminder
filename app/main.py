@@ -3,15 +3,15 @@ import logging.config
 import sys
 import time
 from logging import Logger, getLogger
+from threading import Thread
 
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import ApplicationSettings, ConfigLoader, validate_settings
 from notification import WasteCollectionNotification
 from notify import Notify, SMTPClient
-from reload import RestartOnConfigChangeHandler
+from reload import ConfigChangePoller
 from schedule import every, repeat, run_pending
 from scraper import WasteworksScraper
-from watchdog.observers.polling import PollingObserver
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -37,7 +37,7 @@ def main() -> None:
         )
         notify = Notify(email_client=smtp_client)
     except Exception as e:
-        logger.critical(f"Error loading startup configuration: {e}.")
+        logger.critical(f"Could not load startup configuration: {e}.")
         sys.exit(1)
 
     command = [
@@ -48,11 +48,9 @@ def main() -> None:
         "--config-file",
         config_file,
     ]
-    event_handler = RestartOnConfigChangeHandler(path=config_file, command=command)
-    observer = PollingObserver()
-    observer.schedule(event_handler, path="./config")
-    observer.start()
-
+    poller = ConfigChangePoller(path=config_file, command=command)
+    polling_thread = Thread(target=poller.poll, daemon=True)
+    polling_thread.start()
     logger.info(f"Monitoring config file {config_file} for changes.")
 
     # @repeat(every(60).seconds, settings, web_scraper, notify)
@@ -113,9 +111,8 @@ def main() -> None:
             run_pending()
             time.sleep(1)
     except KeyboardInterrupt:
-        observer.stop()
-
-    observer.join()
+        poller.stop()
+    polling_thread.join()
 
 
 if __name__ == "__main__":
