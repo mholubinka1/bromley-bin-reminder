@@ -1,7 +1,7 @@
 services:
   bromley-bin-reminder:
     container_name: bin-reminder
-    image: mholubinka1/bromley-bin-reminder:latest
+    image: mholubinka1/bromley-bin-reminder:dev
     pull_policy: always
     labels:
       - "com.centurylinklabs.watchtower.enable=true"

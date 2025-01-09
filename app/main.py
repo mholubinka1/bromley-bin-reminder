@@ -11,7 +11,7 @@ from notify import Notify, SMTPClient
 from reload import RestartOnConfigChangeHandler
 from schedule import every, repeat, run_pending
 from scraper import WasteworksScraper
-from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -49,7 +49,7 @@ def main() -> None:
         config_file,
     ]  # ./app/main.py
     event_handler = RestartOnConfigChangeHandler(path=config_file, command=command)
-    observer = Observer()
+    observer = PollingObserver()
     observer.schedule(event_handler, path="./config", recursive=False)
     observer.start()
 
