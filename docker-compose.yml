@@ -6,7 +6,7 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     volumes:
-      - /home/pi/.config/bin-reminder:/config:delegated
+      - /home/pi/.config/bin-reminder:/config
     restart: unless-stopped
 
 #docker-compose up --pull=always -d
