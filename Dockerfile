@@ -31,4 +31,4 @@ USER sel_user
 COPY app ./app
 ENV ENV_FLAG="docker"
 
-CMD [ "poetry", "run", "python", "./app/main.py", "--config-file", "./config/config.yml"]
+CMD [ "poetry", "run", "python", "./app/main.py", "--config-file", "/config/config.yml"]
