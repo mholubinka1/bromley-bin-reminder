@@ -50,12 +50,16 @@ class WasteworksScraper:  # DynamicHTMLScraper
         self._target_url = target_url
 
     def _create_firefox_web_driver(self) -> webdriver.Firefox:
-        if os.environ.get("DEPLOYMENT", None) == "local":
-            service = webdriver.FirefoxService()
-        else:
-            service = webdriver.FirefoxService(
-                executable_path="/usr/local/bin/geckodriver"
-            )
+        env_flag = os.environ.get("ENV_FLAG")
+        match (os.environ.get("ENV_FLAG")):
+            case "local":
+                service = webdriver.FirefoxService()
+            case "docker":
+                service = webdriver.FirefoxService(
+                    executable_path="/usr/local/bin/geckodriver"
+                )
+            case _:
+                raise NotImplementedError(f"Unhandled ENV_FLAG: {env_flag}")
         options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
         options.add_argument("--disable-gpu")
