@@ -47,10 +47,10 @@ def main() -> None:
         "./app/main.py",
         "--config-file",
         config_file,
-    ]  # ./app/main.py
+    ]
     event_handler = RestartOnConfigChangeHandler(path=config_file, command=command)
     observer = PollingObserver()
-    observer.schedule(event_handler, path="./config", recursive=False)
+    observer.schedule(event_handler, path="./config")
     observer.start()
 
     logger.info(f"Monitoring config file {config_file} for changes.")
