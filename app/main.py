@@ -1,7 +1,7 @@
-import argparse
 import logging.config
 import sys
 import time
+from argparse import ArgumentParser, Namespace
 from logging import Logger, getLogger
 from threading import Thread
 
@@ -19,11 +19,16 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 logger.info("Starting bromley-bin-reminder.")
 
 
+def parse_args() -> Namespace:
+    parser = ArgumentParser()
+    parser.add_argument("--config-file", type=str, required=True)
+    args = parser.parse_args()
+    return args
+
+
 def main() -> None:
     try:
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--config-file")
-        args = parser.parse_args()
+        args = parse_args()
         config_file = args.config_file
         configLoader = ConfigLoader(config_file)
         settings = configLoader.get_config()
