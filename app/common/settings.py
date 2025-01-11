@@ -15,7 +15,7 @@ DEFAULT_DAILY_POLL_TIME = "18:00"
 
 def is_null_or_empty(s: Optional[str]) -> bool:
     if not s:
-        return False
+        return True
     return s.strip() == ""
 
 
