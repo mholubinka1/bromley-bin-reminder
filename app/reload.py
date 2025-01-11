@@ -1,6 +1,7 @@
 import logging.config
 import os
 import subprocess
+import sys
 import time
 from logging import Logger, getLogger
 from typing import List
@@ -36,7 +37,7 @@ class ConfigChangePoller:
                     )
                     self._last_modified_time = current_modified_time
                     subprocess.Popen(self._command)
-                    exit(0)
+                    sys.exit(0)
             except FileNotFoundError:
                 logger.error("Config file not found.")
             except Exception:
