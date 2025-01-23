@@ -886,13 +886,13 @@ timezone = ["pytz"]
 
 [[package]]
 name = "selenium"
-version = "4.28.0"
+version = "4.28.1"
 description = "Official Python bindings for Selenium WebDriver"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "selenium-4.28.0-py3-none-any.whl", hash = "sha256:3d6a2e8e1b850a1078884ea19f4e011ecdc12263434d87a0b78769836fb82dd8"},
-    {file = "selenium-4.28.0.tar.gz", hash = "sha256:a9fae6eef48d470a1b0c6e45185d96f0dafb025e8da4b346cc41e4da3ac54fa0"},
+    {file = "selenium-4.28.1-py3-none-any.whl", hash = "sha256:4238847e45e24e4472cfcf3554427512c7aab9443396435b1623ef406fff1cc1"},
+    {file = "selenium-4.28.1.tar.gz", hash = "sha256:0072d08670d7ec32db901bd0107695a330cecac9f196e3afb3fa8163026e022a"},
 ]
 
 [package.dependencies]
@@ -1112,4 +1112,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "eae0aed227889aa61ffbced6059c163df371a8dc8723ce80ccef1d5071dc29b7"
+content-hash = "94532d2cf8086d2ee4f0083aed1a93927d01c0678282190d364cb3e945ac7fc1"
