@@ -1,8 +1,10 @@
 name: Auto Request Review
 
 on:
+  pull_request:
+    types: [assigned, opened, edited, synchronize, ready_for_review, reopened]
   pull_request_target:
-    types: [assigned, opened, synchronize, reopened]
+    types: [assigned, opened, edited, synchronize, ready_for_review, reopened]
 
 jobs:
   auto-request-review:
