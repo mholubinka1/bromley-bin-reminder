@@ -2,3 +2,7 @@ reviewers:
   defaults:
     - mholubinka1
 
+files:
+  '**':
+    - mholubinka1
+
