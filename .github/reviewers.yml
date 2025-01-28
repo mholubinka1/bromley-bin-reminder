@@ -1,8 +1,18 @@
 reviewers:
   defaults:
-    - mholubinka1
+    - repository-owners
+
+  groups:
+    repository-owners:
+      - mholubinka1
 
 files:
   '**':
-    - mholubinka1
+    - repository-owners
+
+options:
+  ignore_draft: true
+  ignored_keywords:
+    - DO NOT REVIEW
+  enable_group_assignment: false
 
