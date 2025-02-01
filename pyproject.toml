@@ -13,7 +13,7 @@ requests = "^2.32.3"
 selenium = "^4.28.1"
 lxml = {extras = ["html-clean"], version = "^5.3.0"}
 schedule = "^1.2.2"
-pytz = "^2024.2"
+pytz = "^2025.1"
 webdriver-manager = "^4.0.2"
 watchdog = "^6.0.0"
 pyyaml = "^6.0.2"
@@ -23,7 +23,7 @@ pyyaml = "^6.0.2"
 isort = "^6.0.0"
 black = "^25.1.0"
 mypy = "^1.14.1"
-ruff = "^0.9.3"
+ruff = "^0.9.4"
 pre-commit = "^4.1.0"
 
 [build-system]
