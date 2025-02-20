@@ -10,7 +10,7 @@ package-mode = false
 python = "^3.11"
 beautifulsoup4 = "^4.13.3"
 requests = "^2.32.3"
-selenium = "^4.28.1"
+selenium = "^4.29.0"
 lxml = {extras = ["html-clean"], version = "^5.3.1"}
 schedule = "^1.2.2"
 pytz = "^2025.1"
@@ -23,7 +23,7 @@ pyyaml = "^6.0.2"
 isort = "^6.0.0"
 black = "^25.1.0"
 mypy = "^1.15.0"
-ruff = "^0.9.6"
+ruff = "^0.9.7"
 pre-commit = "^4.1.0"
 
 [build-system]
