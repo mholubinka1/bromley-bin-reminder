@@ -8,7 +8,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
-beautifulsoup4 = "^4.13.3"
+beautifulsoup4 = "^4.13.4"
 requests = "^2.32.3"
 selenium = "^4.31.0"
 lxml = {extras = ["html-clean"], version = "^5.3.2"}
