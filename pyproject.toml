@@ -9,7 +9,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.11"
 beautifulsoup4 = "^4.13.4"
-requests = "^2.32.3"
+requests = "^2.32.4"
 selenium = "^4.33.0"
 lxml = {extras = ["html-clean"], version = "^5.4.0"}
 schedule = "^1.2.2"
