@@ -10,7 +10,7 @@ package-mode = false
 python = "^3.11"
 beautifulsoup4 = "^4.13.4"
 requests = "^2.32.4"
-selenium = "^4.34.2"
+selenium = "^4.35.0"
 lxml = {extras = ["html-clean"], version = "^6.0.0"}
 schedule = "^1.2.2"
 pytz = "^2025.2"
@@ -23,8 +23,8 @@ pyyaml = "^6.0.2"
 isort = "^6.0.1"
 black = "^25.1.0"
 mypy = "^1.17.1"
-ruff = "^0.12.7"
-pre-commit = "^4.2.0"
+ruff = "^0.12.8"
+pre-commit = "^4.3.0"
 
 [build-system]
 requires = ["poetry-core"]
