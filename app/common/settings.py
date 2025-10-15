@@ -23,6 +23,7 @@ def is_null_or_empty(s: Optional[str]) -> bool:
 class RemindSettings:
     target_emails: List[str]
     time: str
+    tz: str
 
 
 @dataclass
@@ -39,6 +40,7 @@ class ApplicationSettings:
         self.remind = RemindSettings(
             target_emails=yaml_settings["remind"]["email_addresses"],
             time=yaml_settings["remind"]["time"],
+            tz=yaml_settings["remind"]["tz"],
         )
         self.smtp = SMTPSettings(
             username=yaml_settings["smtp"]["username"],

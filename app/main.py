@@ -59,7 +59,12 @@ def main() -> None:
     logger.info(f"Monitoring config file {config_file} for changes.")
 
     # @repeat(every(60).seconds, settings, web_scraper, notify)
-    @repeat(every().day.at(settings.remind.time), settings, web_scraper, notify)
+    @repeat(
+        every().day.at(settings.remind.time, settings.remind.tz),
+        settings,
+        web_scraper,
+        notify,
+    )
     def daily_job(
         settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
     ) -> None:
@@ -84,7 +89,12 @@ def main() -> None:
             logger.exception(e)
 
     # @repeat(every(5).seconds, settings, web_scraper, notify)
-    @repeat(every().sunday.at("18:00"), settings, web_scraper, notify)
+    @repeat(
+        every().sunday.at(settings.remind.time, settings.remind.tz),
+        settings,
+        web_scraper,
+        notify,
+    )
     def weekly_job(
         settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
     ) -> None:

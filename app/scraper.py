@@ -92,7 +92,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
         collections: List[WasteCollection] = []
         for service in services:
             service_name = service.get_text(strip=True)
-            next_collection = service.find_next("dt", string="Next collection")
+            next_collection = service.find_next("dt", string="Next collection")  # type: ignore[call-overload]
             if next_collection:
                 is_tomorrow, is_this_week, next_collection_date = parse_date(
                     next_collection.find_next_sibling("dd").get_text(strip=True)
