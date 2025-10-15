@@ -17,6 +17,7 @@ repos:
           'types-requests',
           'types-simplejson',
           'types-PyYAML',
+          'types-pytz',
           'sqlalchemy-stubs',
         ]
   - repo: https://github.com/pycqa/isort

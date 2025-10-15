@@ -11,7 +11,7 @@ python = "^3.11"
 beautifulsoup4 = "^4.13.4"
 requests = "^2.32.4"
 selenium = "^4.33.0"
-lxml = {extras = ["html-clean"], version = "^5.4.0"}
+lxml = {extras = ["html-clean"], version = "^6.0.2"}
 schedule = "^1.2.2"
 pytz = "^2025.2"
 webdriver-manager = "^4.0.2"
@@ -20,10 +20,10 @@ pyyaml = "^6.0.2"
 
 
 [tool.poetry.group.dev.dependencies]
-isort = "^6.0.1"
+isort = "^7.0.0"
 black = "^25.1.0"
 mypy = "^1.16.1"
-ruff = "^0.12.0"
+ruff = "^0.14.0"
 pre-commit = "^4.2.0"
 
 [build-system]

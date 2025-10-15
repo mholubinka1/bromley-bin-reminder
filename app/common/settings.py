@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import Dict, List, Optional
 
+import pytz
 import yaml
 from common.logging import APP_LOGGER_NAME, config
 
@@ -11,6 +12,7 @@ logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 DEFAULT_DAILY_POLL_TIME = "18:00"
+DEFAULT_TZ = "Europe/London"
 
 
 def is_null_or_empty(s: Optional[str]) -> bool:
@@ -82,6 +84,13 @@ def validate_settings(settings: ApplicationSettings) -> None:
             f"Custom daily poll time not provided, using default: {DEFAULT_DAILY_POLL_TIME}"
         )
         settings.remind.time = DEFAULT_DAILY_POLL_TIME
+    if is_null_or_empty(settings.remind.tz):
+        logger.warning(f"Custom timezone not provided, using default: {DEFAULT_TZ}")
+        settings.remind.tz = DEFAULT_TZ
+    if settings.remind.tz not in pytz.all_timezones:
+        logger.warning(
+            f"Unrecognised timezone {settings.remind.tz}, using default: {DEFAULT_TZ}"
+        )
     if is_null_or_empty(settings.smtp.username):
         raise RuntimeError("A valid sender e-mail address must be provided.")
     if is_null_or_empty(settings.smtp.server) or settings.smtp.port is None:
