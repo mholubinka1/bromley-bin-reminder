@@ -21,10 +21,10 @@ pyyaml = "^6.0.3"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^7.0.0"
-black = "^25.9.0"
+black = "^25.11.0"
 mypy = "^1.18.2"
-ruff = "^0.14.3"
-pre-commit = "^4.3.0"
+ruff = "^0.14.4"
+pre-commit = "^4.4.0"
 
 [build-system]
 requires = ["poetry-core"]
