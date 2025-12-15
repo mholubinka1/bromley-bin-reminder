@@ -22,7 +22,7 @@ pyyaml = "^6.0.3"
 [tool.poetry.group.dev.dependencies]
 isort = "^7.0.0"
 black = "^25.12.0"
-mypy = "^1.19.0"
+mypy = "^1.19.1"
 ruff = "^0.14.9"
 pre-commit = "^4.5.0"
 
