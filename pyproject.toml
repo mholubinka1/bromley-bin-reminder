@@ -9,7 +9,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.11"
 beautifulsoup4 = "^4.14.3"
-requests = "^2.33.0"
+requests = "^2.33.1"
 selenium = "^4.41.0"
 lxml = {extras = ["html-clean"], version = "^6.0.2"}
 schedule = "^1.2.2"
@@ -22,7 +22,7 @@ pyyaml = "^6.0.3"
 [tool.poetry.group.dev.dependencies]
 isort = "^8.0.1"
 black = "^26.3.1"
-mypy = "^1.19.1"
+mypy = "^1.20.0"
 ruff = "^0.15.8"
 pre-commit = "^4.5.1"
 
