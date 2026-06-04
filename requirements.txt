@@ -513,9 +513,9 @@ watchdog==6.0.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:e6f0e77c9417e7cd62af82529b10563db3423625c5fce018430b249bf977f9e8 \
     --hash=sha256:e7631a77ffb1f7d2eefa4445ebbee491c720a5661ddf6df3498ebecae5ed375c \
     --hash=sha256:ef810fbf7b781a5a593894e4f439773830bdecb885e6880d957d5b9382a960d2
-webdriver-manager==4.1.1 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:3832f4ab2186c86496b5c0a6d362357a294ca8c2be9972b49d089b809e262687 \
-    --hash=sha256:4cedd217862e3fe324fadf7423fc9757c40af5979dda36493712c6c751224df1
+webdriver-manager==4.1.2 ; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:230515ff4dc4c2feff1add25306ca262421b31016d77ded305e8dd921266445f \
+    --hash=sha256:552bbb4e6f95e6e8b772565d2023e7c0ec5ff1736db0b186922d0466fc78c3de
 websocket-client==1.9.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:9e813624b6eb619999a97dc7958469217c3176312b3a16a4bd1bc7e08a46ec98 \
     --hash=sha256:af248a825037ef591efbf6ed20cc5faa03d3b47b9e5a2230a529eeee1c1fc3ef
