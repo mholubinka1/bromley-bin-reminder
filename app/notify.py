@@ -2,7 +2,6 @@ import logging.config
 from email.mime.multipart import MIMEMultipart
 from logging import Logger, getLogger
 from smtplib import SMTP
-from typing import List, Optional
 
 from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
@@ -15,12 +14,12 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 
 class SMTPClient:
     _username: str
-    _password: Optional[str]
+    _password: str | None
     _server: str
     _port: int
 
     def __init__(
-        self, username: str, password: Optional[str], server: str, port: int
+        self, username: str, password: str | None, server: str, port: int
     ) -> None:
         self._username = username
         self._password = password
@@ -28,7 +27,7 @@ class SMTPClient:
         self._port = port
 
     def send_mail(
-        self, sender: str, receivers: str | List[str], message: MIMEMultipart
+        self, sender: str, receivers: str | list[str], message: MIMEMultipart
     ) -> None:
         client = SMTP(self._server, self._port)
         client.starttls()
@@ -49,7 +48,7 @@ class Notify:
         self,
         notification: WasteCollectionNotification,
         sender: str,
-        email_addresses: List[str],
+        email_addresses: list[str],
     ) -> None:
         msg = notification.email
         msg["From"] = sender

@@ -41,7 +41,7 @@ def main() -> None:
             port=settings.smtp.port,
         )
         notify = Notify(email_client=smtp_client)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.critical(f"Could not load startup configuration: {e}.")
         sys.exit(1)
 
@@ -85,8 +85,8 @@ def main() -> None:
                 notify.send_email(
                     notification, settings.smtp.username, settings.remind.target_emails
                 )
-        except Exception as e:
-            logger.exception(e)
+        except Exception:
+            logger.exception("Daily scrape and alert job failed.")
 
     # @repeat(every(5).seconds, settings, web_scraper, notify)
     @repeat(
@@ -118,8 +118,8 @@ def main() -> None:
                 notify.send_email(
                     notification, settings.smtp.username, settings.remind.target_emails
                 )
-        except Exception as e:
-            logger.exception(e)
+        except Exception:
+            logger.exception("Weekly scrape and alert job failed.")
 
     try:
         while True:

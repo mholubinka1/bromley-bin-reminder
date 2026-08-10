@@ -1,13 +1,17 @@
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import List
+from typing import ClassVar
+from zoneinfo import ZoneInfo
 
 from collection import WasteCollection
+from common.settings import DEFAULT_TZ
+
+LOCAL_TZ = ZoneInfo(DEFAULT_TZ)
 
 
 class WasteCollectionNotification:
-    service_colours = {
+    service_colours: ClassVar[dict[str, str]] = {
         "Mixed Recycling (Cans, Plastics & Glass)": "#006400",
         "Paper & Cardboard": "#00008B",
         "Garden Waste": "#8B4513",
@@ -18,7 +22,7 @@ class WasteCollectionNotification:
     email: MIMEMultipart
 
     def __init__(
-        self, upcoming_collections: List[WasteCollection], period: str = "tomorrow"
+        self, upcoming_collections: list[WasteCollection], period: str = "tomorrow"
     ) -> None:
         self.email = self._create_email(upcoming_collections, period)
 
@@ -34,22 +38,19 @@ class WasteCollectionNotification:
         return date.strftime(f"%A {day}{day_suffix} %B")
 
     def _tomorrow(self) -> str:
-        tomorrow = datetime.now() + timedelta(days=1)
+        tomorrow = datetime.now(LOCAL_TZ) + timedelta(days=1)
         return self._print_date(tomorrow)
 
     def _build_tomorrow_html_body(
-        self, upcoming_collections: List[WasteCollection]
+        self, upcoming_collections: list[WasteCollection]
     ) -> str:
-        table_rows = "".join(
-            f"""
+        table_rows = "".join(f"""
             <tr>
                 <td>{collection.service_name}</td>
                 <td style="width: 80px;">
                     <div style="width: 80px; height: 30px; background-color: {self.service_colours[collection.service_name]};"></div>
                 </td>
-            </tr>"""
-            for collection in upcoming_collections
-        )
+            </tr>""" for collection in upcoming_collections)
         tomorrow_str = self._tomorrow()
         html_body = f"""
         <!DOCTYPE html>
@@ -114,19 +115,16 @@ class WasteCollectionNotification:
         """
         return html_body
 
-    def _build_week_html_body(self, upcoming_collections: List[WasteCollection]) -> str:
-        table_rows = "".join(
-            f"""
+    def _build_week_html_body(self, upcoming_collections: list[WasteCollection]) -> str:
+        table_rows = "".join(f"""
             <tr>
                 <td>{collection.service_name}</td>
                 <td style="width: 80px;">
                     <div style="width: 80px; height: 30px; background-color: {self.service_colours[collection.service_name]};"></div>
                 </td>
                 <td>{self._print_date(collection.next_collection_date)}
-            </tr>"""
-            for collection in upcoming_collections
-        )
-        week_commencing = self._print_date(datetime.now())
+            </tr>""" for collection in upcoming_collections)
+        week_commencing = self._print_date(datetime.now(LOCAL_TZ))
         html_body = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -192,7 +190,7 @@ class WasteCollectionNotification:
         return html_body
 
     def _create_email(
-        self, upcoming_collections: List[WasteCollection], period: str
+        self, upcoming_collections: list[WasteCollection], period: str
     ) -> MIMEMultipart:
         msg = MIMEMultipart()
         match (period):
@@ -213,5 +211,5 @@ class WasteCollectionNotification:
             case _:
                 raise NotImplementedError(period)
 
-    def _create_push(self, upcoming_collections: List[WasteCollection]) -> None:
+    def _create_push(self, upcoming_collections: list[WasteCollection]) -> None:
         pass

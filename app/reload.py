@@ -4,7 +4,6 @@ import subprocess
 import sys
 import time
 from logging import Logger, getLogger
-from typing import List
 
 from common.logging import APP_LOGGER_NAME, config
 
@@ -14,11 +13,11 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 
 class ConfigChangePoller:
     _path: str
-    _command: List[str]
+    _command: list[str]
     _last_modified_time: float
     _monitoring: bool
 
-    def __init__(self, path: str, command: List) -> None:
+    def __init__(self, path: str, command: list) -> None:
         self._path = path
         self._command = command
         self._last_modified_time = os.path.getmtime(self._path)
@@ -40,7 +39,7 @@ class ConfigChangePoller:
                     sys.exit(0)
             except FileNotFoundError:
                 logger.error("Config file not found.")
-            except Exception:
+            except Exception:  # noqa: BLE001
                 logger.error("Error polling config file.")
             finally:
                 time.sleep(1)
