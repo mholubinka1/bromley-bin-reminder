@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - '**'
-  pull_request:
-    branches:
-      - 'main'
 
 jobs:
   ARM64_App_Image_Build_and_Push:
