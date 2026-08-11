@@ -41,7 +41,7 @@ class ApplicationSettings:
         self.remind = RemindSettings(
             target_emails=yaml_settings["remind"]["email_addresses"],
             time=yaml_settings["remind"]["time"],
-            tz=yaml_settings["remind"]["tz"],
+            tz=yaml_settings["remind"].get("tz", ""),
         )
         self.smtp = SMTPSettings(
             username=yaml_settings["smtp"]["username"],
@@ -68,10 +68,8 @@ class ConfigLoader:
                 settings = yaml.safe_load(file)
             logger.info(f"Successfully loaded settings from {self._path}")
             self._config = ApplicationSettings(settings)
-        except Exception as e:  # noqa: BLE001
-            logger.critical(
-                f"Failed to load application settings from {self._path}: {e}"
-            )
+        except Exception:
+            logger.exception(f"Failed to load application settings from {self._path}")
             sys.exit(1)
 
 
@@ -90,6 +88,7 @@ def validate_settings(settings: ApplicationSettings) -> None:
         logger.warning(
             f"Unrecognised timezone {settings.remind.tz}, using default: {DEFAULT_TZ}"
         )
+        settings.remind.tz = DEFAULT_TZ
     if is_null_or_empty(settings.smtp.username):
         raise RuntimeError("A valid sender e-mail address must be provided.")
     if is_null_or_empty(settings.smtp.server) or settings.smtp.port is None:

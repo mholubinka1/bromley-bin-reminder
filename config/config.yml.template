@@ -4,6 +4,7 @@ remind:
     - firstname.lastname@provider.com
     - firstname.lastname@provider.com
   time: '18:00'
+  tz: 'Europe/London'                                   # optional, defaults to Europe/London if blank or unrecognised
 
 smtp:
   username: sender.email.address@provider.com         # this field is required

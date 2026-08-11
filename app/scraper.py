@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 from collection import WasteCollection, is_collection_this_week, is_collection_tomorrow
 from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import DEFAULT_TZ
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -18,22 +17,20 @@ from selenium.webdriver.support.wait import WebDriverWait
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
-LOCAL_TZ = ZoneInfo(DEFAULT_TZ)
-
 
 class ScraperError(Exception):
     pass
 
 
-def parse_date(date: str) -> tuple[bool, bool, datetime]:
+def parse_date(date: str, tz: ZoneInfo) -> tuple[bool, bool, datetime]:
     date = re.sub(r"\(.*?\)", "", date)
     date = re.sub(r"\s*\(In Progress\)", "", date)
     date = re.sub(r"\b(\d+)(th|rd|nd|st)\b", r"\1", date)
     date = date.strip()
-    current_date = datetime.now(LOCAL_TZ)
+    current_date = datetime.now(tz)
     current_year = current_date.year
     current_month = current_date.month
-    parsed_date = datetime.strptime(date, "%A, %d %B").replace(tzinfo=LOCAL_TZ)
+    parsed_date = datetime.strptime(date, "%A, %d %B").replace(tzinfo=tz)
     collection_month = parsed_date.month
     if current_month == 12 and collection_month == 1:
         target_year = current_year + 1
@@ -41,7 +38,7 @@ def parse_date(date: str) -> tuple[bool, bool, datetime]:
         target_year = current_year
     collection_date = datetime.strptime(
         f"{date} {target_year}", "%A, %d %B %Y"
-    ).replace(tzinfo=LOCAL_TZ)
+    ).replace(tzinfo=tz)
     is_tomorrow = is_collection_tomorrow(
         current_date=current_date, collection_date=collection_date
     )
@@ -53,10 +50,12 @@ def parse_date(date: str) -> tuple[bool, bool, datetime]:
 
 class WasteworksScraper:  # DynamicHTMLScraper
     _target_url: str
+    _tz: ZoneInfo
     _chrome_web_driver: webdriver.Firefox
 
-    def __init__(self, target_url: str) -> None:
+    def __init__(self, target_url: str, tz: ZoneInfo) -> None:
         self._target_url = target_url
+        self._tz = tz
 
     def _create_firefox_web_driver(self) -> webdriver.Firefox:
         env_flag = os.environ.get("ENV_FLAG")
@@ -104,7 +103,8 @@ class WasteworksScraper:  # DynamicHTMLScraper
             next_collection = service.find_next("dt", string="Next collection")  # type: ignore[call-overload]
             if next_collection:
                 is_tomorrow, is_this_week, next_collection_date = parse_date(
-                    next_collection.find_next_sibling("dd").get_text(strip=True)
+                    next_collection.find_next_sibling("dd").get_text(strip=True),
+                    self._tz,
                 )
                 collections.append(
                     WasteCollection(

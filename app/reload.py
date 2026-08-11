@@ -39,8 +39,8 @@ class ConfigChangePoller:
                     sys.exit(0)
             except FileNotFoundError:
                 logger.error("Config file not found.")
-            except Exception:  # noqa: BLE001
-                logger.error("Error polling config file.")
+            except Exception:
+                logger.exception("Error polling config file.")
             finally:
                 time.sleep(1)
 

@@ -5,9 +5,6 @@ from typing import ClassVar
 from zoneinfo import ZoneInfo
 
 from collection import WasteCollection
-from common.settings import DEFAULT_TZ
-
-LOCAL_TZ = ZoneInfo(DEFAULT_TZ)
 
 
 class WasteCollectionNotification:
@@ -22,8 +19,12 @@ class WasteCollectionNotification:
     email: MIMEMultipart
 
     def __init__(
-        self, upcoming_collections: list[WasteCollection], period: str = "tomorrow"
+        self,
+        upcoming_collections: list[WasteCollection],
+        tz: ZoneInfo,
+        period: str = "tomorrow",
     ) -> None:
+        self._tz = tz
         self.email = self._create_email(upcoming_collections, period)
 
     def _print_date(self, date: datetime) -> str:
@@ -38,7 +39,7 @@ class WasteCollectionNotification:
         return date.strftime(f"%A {day}{day_suffix} %B")
 
     def _tomorrow(self) -> str:
-        tomorrow = datetime.now(LOCAL_TZ) + timedelta(days=1)
+        tomorrow = datetime.now(self._tz) + timedelta(days=1)
         return self._print_date(tomorrow)
 
     def _build_tomorrow_html_body(
@@ -124,7 +125,7 @@ class WasteCollectionNotification:
                 </td>
                 <td>{self._print_date(collection.next_collection_date)}
             </tr>""" for collection in upcoming_collections)
-        week_commencing = self._print_date(datetime.now(LOCAL_TZ))
+        week_commencing = self._print_date(datetime.now(self._tz))
         html_body = f"""
         <!DOCTYPE html>
         <html lang="en">
