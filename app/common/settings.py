@@ -2,6 +2,7 @@ import logging.config
 import sys
 from dataclasses import dataclass
 from logging import Logger, getLogger
+from typing import Any
 
 import pytz
 import yaml
@@ -36,7 +37,7 @@ class SMTPSettings:
 
 
 class ApplicationSettings:
-    def __init__(self, yaml_settings: dict) -> None:
+    def __init__(self, yaml_settings: dict[str, Any]) -> None:
         self.wasteworks_url = yaml_settings["remind"]["url"]
         self.remind = RemindSettings(
             target_emails=yaml_settings["remind"]["email_addresses"],

@@ -19,6 +19,7 @@ def retry(
             while attempt < stop_after:
                 try:
                     return func(*args, **kwargs)
+                # generic retry wrapper: must catch anything to retry it
                 except Exception as e:  # noqa: BLE001
                     error = f"Error attempting to execute {func}: {e}. \nRetrying in {retry_delay} seconds."
                     logger.warning(error)

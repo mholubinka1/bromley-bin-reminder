@@ -17,7 +17,7 @@ class ConfigChangePoller:
     _last_modified_time: float
     _monitoring: bool
 
-    def __init__(self, path: str, command: list) -> None:
+    def __init__(self, path: str, command: list[str]) -> None:
         self._path = path
         self._command = command
         self._last_modified_time = os.path.getmtime(self._path)
