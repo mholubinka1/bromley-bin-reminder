@@ -2,7 +2,7 @@ import logging.config
 import sys
 from dataclasses import dataclass
 from logging import Logger, getLogger
-from typing import Dict, List, Optional
+from typing import Any
 
 import pytz
 import yaml
@@ -15,7 +15,7 @@ DEFAULT_DAILY_POLL_TIME = "18:00"
 DEFAULT_TZ = "Europe/London"
 
 
-def is_null_or_empty(s: Optional[str]) -> bool:
+def is_null_or_empty(s: str | None) -> bool:
     if not s:
         return True
     return s.strip() == ""
@@ -23,7 +23,7 @@ def is_null_or_empty(s: Optional[str]) -> bool:
 
 @dataclass
 class RemindSettings:
-    target_emails: List[str]
+    target_emails: list[str]
     time: str
     tz: str
 
@@ -31,18 +31,18 @@ class RemindSettings:
 @dataclass
 class SMTPSettings:
     username: str
-    password: Optional[str]
+    password: str | None
     server: str
     port: int
 
 
 class ApplicationSettings:
-    def __init__(self, yaml_settings: Dict) -> None:
+    def __init__(self, yaml_settings: dict[str, Any]) -> None:
         self.wasteworks_url = yaml_settings["remind"]["url"]
         self.remind = RemindSettings(
             target_emails=yaml_settings["remind"]["email_addresses"],
             time=yaml_settings["remind"]["time"],
-            tz=yaml_settings["remind"]["tz"],
+            tz=yaml_settings["remind"].get("tz", ""),
         )
         self.smtp = SMTPSettings(
             username=yaml_settings["smtp"]["username"],
@@ -69,10 +69,8 @@ class ConfigLoader:
                 settings = yaml.safe_load(file)
             logger.info(f"Successfully loaded settings from {self._path}")
             self._config = ApplicationSettings(settings)
-        except Exception as e:
-            logger.critical(
-                f"Failed to load application settings from {self._path}: {e}"
-            )
+        except Exception:
+            logger.exception(f"Failed to load application settings from {self._path}")
             sys.exit(1)
 
 
@@ -91,8 +89,8 @@ def validate_settings(settings: ApplicationSettings) -> None:
         logger.warning(
             f"Unrecognised timezone {settings.remind.tz}, using default: {DEFAULT_TZ}"
         )
+        settings.remind.tz = DEFAULT_TZ
     if is_null_or_empty(settings.smtp.username):
         raise RuntimeError("A valid sender e-mail address must be provided.")
     if is_null_or_empty(settings.smtp.server) or settings.smtp.port is None:
         raise RuntimeError("SMTP server and port configurations must be provided.")
-    return

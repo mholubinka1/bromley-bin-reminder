@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime
 from logging import Logger, getLogger
-from typing import List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 from collection import WasteCollection, is_collection_this_week, is_collection_tomorrow
@@ -18,21 +18,27 @@ logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 
-def parse_date(date: str) -> Tuple[bool, bool, datetime]:
+class ScraperError(Exception):
+    pass
+
+
+def parse_date(date: str, tz: ZoneInfo) -> tuple[bool, bool, datetime]:
     date = re.sub(r"\(.*?\)", "", date)
     date = re.sub(r"\s*\(In Progress\)", "", date)
     date = re.sub(r"\b(\d+)(th|rd|nd|st)\b", r"\1", date)
     date = date.strip()
-    current_date = datetime.now()
+    current_date = datetime.now(tz)
     current_year = current_date.year
     current_month = current_date.month
-    parsed_date = datetime.strptime(date, "%A, %d %B")
+    parsed_date = datetime.strptime(date, "%A, %d %B").replace(tzinfo=tz)
     collection_month = parsed_date.month
     if current_month == 12 and collection_month == 1:
         target_year = current_year + 1
     else:
         target_year = current_year
-    collection_date = datetime.strptime(f"{date} {target_year}", "%A, %d %B %Y")
+    collection_date = datetime.strptime(
+        f"{date} {target_year}", "%A, %d %B %Y"
+    ).replace(tzinfo=tz)
     is_tomorrow = is_collection_tomorrow(
         current_date=current_date, collection_date=collection_date
     )
@@ -44,10 +50,12 @@ def parse_date(date: str) -> Tuple[bool, bool, datetime]:
 
 class WasteworksScraper:  # DynamicHTMLScraper
     _target_url: str
+    _tz: ZoneInfo
     _chrome_web_driver: webdriver.Firefox
 
-    def __init__(self, target_url: str) -> None:
+    def __init__(self, target_url: str, tz: ZoneInfo) -> None:
         self._target_url = target_url
+        self._tz = tz
 
     def _create_firefox_web_driver(self) -> webdriver.Firefox:
         env_flag = os.environ.get("ENV_FLAG")
@@ -67,7 +75,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
         return driver
 
     @retry()
-    def _render_web_page(self) -> Optional[str]:
+    def _render_web_page(self) -> str | None:
         driver = self._create_firefox_web_driver()
         driver.get(self._target_url)
         try:
@@ -81,21 +89,22 @@ class WasteworksScraper:  # DynamicHTMLScraper
             page_source = driver.page_source
             driver.quit()
             return page_source
-        except Exception as e:
+        except Exception:
             driver.quit()
-            logger.exception(e)
-            raise Exception(f"Failed to render Wasteworks page: {self._target_url}")
+            logger.exception(f"Failed to render Wasteworks page: {self._target_url}")
+            raise ScraperError(f"Failed to render Wasteworks page: {self._target_url}")
 
-    def _extract_collections(self, soup: BeautifulSoup) -> List[WasteCollection]:
+    def _extract_collections(self, soup: BeautifulSoup) -> list[WasteCollection]:
         logger.info("Extracting upcoming collection information.")
         services = soup.find_all("h3", class_="govuk-heading-m waste-service-name")
-        collections: List[WasteCollection] = []
+        collections: list[WasteCollection] = []
         for service in services:
             service_name = service.get_text(strip=True)
             next_collection = service.find_next("dt", string="Next collection")  # type: ignore[call-overload]
             if next_collection:
                 is_tomorrow, is_this_week, next_collection_date = parse_date(
-                    next_collection.find_next_sibling("dd").get_text(strip=True)
+                    next_collection.find_next_sibling("dd").get_text(strip=True),
+                    self._tz,
                 )
                 collections.append(
                     WasteCollection(
@@ -108,7 +117,7 @@ class WasteworksScraper:  # DynamicHTMLScraper
         logger.info(f"Found data for {len(collections)} upcoming collections.")
         return collections
 
-    def get_upcoming_collections(self) -> List[WasteCollection]:
+    def get_upcoming_collections(self) -> list[WasteCollection]:
         html = self._render_web_page()
         soup = BeautifulSoup(html, "html.parser")
         return self._extract_collections(soup)
