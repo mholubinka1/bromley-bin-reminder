@@ -1,5 +1,7 @@
 # Issues: chore/node24-actions-docker-retry
 
+> Work complete — PR ready to merge.
+
 ## Harden ci-arm64.yml — Node 24 actions + Docker retry
 
 **Issue**: #255
@@ -24,14 +26,14 @@ branch-based tag logic (`dev` for non-`main`, `latest` for `main`) and the
 
 ### Acceptance criteria
 
-- [ ] `actions/checkout@v2` is bumped to `actions/checkout@v7`
-- [ ] `docker/login-action` and `docker/build-push-action` no longer appear in the workflow
-- [ ] Docker login and build/push run as shell commands wrapped in `nick-fields/retry@v4`
+- [x] `actions/checkout@v2` is bumped to `actions/checkout@v7`
+- [x] `docker/login-action` and `docker/build-push-action` no longer appear in the workflow
+- [x] Docker login and build/push run as shell commands wrapped in `nick-fields/retry@v4`
       (`max_attempts: 3`, `retry_wait_seconds: 15`, `timeout_minutes: 5`)
-- [ ] Docker Hub credentials are passed via the step's `env:` block, not as a CLI argument
-- [ ] The build uses the local checkout, not a remote `git#{sha}` context, with an inline
+- [x] Docker Hub credentials are passed via the step's `env:` block, not as a CLI argument
+- [x] The build uses the local checkout, not a remote `git#{sha}` context, with an inline
       YAML comment explaining why
-- [ ] A pushed run of the workflow succeeds (`gh run watch`)
-- [ ] The run's logs contain no "Node.js 20 is deprecated" warning
+- [x] A pushed run of the workflow succeeds (`gh run watch`)
+- [x] The run's logs contain no "Node.js 20 is deprecated" warning
 
 ---
