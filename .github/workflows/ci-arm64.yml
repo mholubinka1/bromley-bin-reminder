@@ -1,4 +1,4 @@
-name: Docker Build/Publish Image - ARMv7
+name: Docker Build/Publish Image - ARM64
 
 on:
   push:
