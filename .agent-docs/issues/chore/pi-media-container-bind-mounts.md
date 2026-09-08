@@ -1,5 +1,7 @@
 # Issues: chore/pi-media-container-bind-mounts
 
+> Work complete — repo PR #271 open; Pi cutover done (see acceptance criteria).
+
 ## Move `bin-reminder` config bind mount to the `pi-media` per-container layout
 
 **Issue**: #270
@@ -22,21 +24,21 @@ the README or config templates — no host paths appear in them.
 
 ### Acceptance criteria
 
-- [ ] `docker-compose.yml` `/config` bind source is
+- [x] `docker-compose.yml` `/config` bind source is
       `/mnt/media/pi-media/containers/bin-reminder/config`
-- [ ] `image`, `pull_policy`, `labels`, `restart`, and the container path `/config` are
+- [x] `image`, `pull_policy`, `labels`, `restart`, and the container path `/config` are
       unchanged
-- [ ] No `/logs` or `/extensions` mount is added
-- [ ] No stale reference to `/home/pi/.config/bin-reminder` remains in the repo outside this
+- [x] No `/logs` or `/extensions` mount is added
+- [x] No stale reference to `/home/pi/.config/bin-reminder` remains in the repo outside this
       spec/issue
-- [ ] Rendered compose (`docker compose -f - config`) shows exactly one bind, pointing at the
+- [x] Rendered compose (`docker compose -f - config`) shows exactly one bind, pointing at the
       new path
-- [ ] Pi: `/mnt/media/pi-media/containers/bin-reminder/config/config.yml` exists and its md5
+- [x] Pi: `/mnt/media/pi-media/containers/bin-reminder/config/config.yml` exists and its md5
       matches the old `/home/pi/.config/bin-reminder/config.yml`
-- [ ] Pi: committed `pi-desktop` `docker/docker-compose.yml` updated and committed (only that
+- [x] Pi: committed `pi-desktop` `docker/docker-compose.yml` updated and committed (only that
       file)
-- [ ] Pi: `docker inspect bin-reminder` shows `/config` -> new path, `rw=true`,
+- [x] Pi: `docker inspect bin-reminder` shows `/config` -> new path, `rw=true`,
       `state=running`, `restarts=0`
-- [ ] Pi: old `/home/pi/.config/bin-reminder` removed after verification passes
+- [x] Pi: old `/home/pi/.config/bin-reminder` removed after verification passes
 
 ---
