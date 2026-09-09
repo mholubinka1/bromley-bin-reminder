@@ -75,7 +75,6 @@ single change, leaving no Poetry reference anywhere in the repository.
       block in `.gitignore` and this change's own `.agent-docs/` spec and issue — which
       necessarily name Poetry to describe the migration — are not matches.
 - [x] CI (`ci-arm64.yml`) builds and pushes the Docker image successfully on the branch.
-      (Green on the core migration commit `b890524`; the build for the `UV_NO_CACHE`
-      follow-up commit should be confirmed green before merge.)
+      (Green on `b890524`, `d13fef7`, and `e4d8ee4`.)
 
 ---
