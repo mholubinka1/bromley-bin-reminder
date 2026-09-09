@@ -4,6 +4,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.10 /uv /uvx /bin/
 
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 ENV UV_FROZEN=1
+ENV UV_NO_CACHE=1
 
 RUN useradd -ms /bin/bash sel_user
 
@@ -19,7 +20,7 @@ VOLUME /config
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --no-dev --no-cache
+RUN uv sync --frozen --no-dev
 
 USER sel_user
 

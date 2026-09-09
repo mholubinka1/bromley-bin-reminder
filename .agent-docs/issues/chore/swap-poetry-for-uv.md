@@ -22,8 +22,9 @@ single change, leaving no Poetry reference anywhere in the repository.
 - Generate and commit `uv.lock`. Delete `poetry.lock` and `requirements.txt`.
 - Add `.python-version` containing `3.11`.
 - Dockerfile: install `uv` by copying from a version-pinned `ghcr.io/astral-sh/uv` image;
-  `uv sync --frozen --no-dev --no-cache` in place of the Poetry bootstrap and install;
-  set `UV_PROJECT_ENVIRONMENT` and `UV_FROZEN`; entrypoint
+  `uv sync --frozen --no-dev` in place of the Poetry bootstrap and install; set
+  `UV_PROJECT_ENVIRONMENT`, `UV_FROZEN`, and `UV_NO_CACHE=1` (so neither the root-run
+  build sync nor the `sel_user`-run `uv run` touches a cache); entrypoint
   `uv run --no-sync python ./app/main.py ...`. Geckodriver, firefox-esr, xvfb, `useradd`,
   and `VOLUME /config` lines unchanged.
 - `app/main.py`: the config-reload restart command list uses `uv run --no-sync` instead
@@ -55,8 +56,8 @@ single change, leaving no Poetry reference anywhere in the repository.
       `notification`, `collection`, `reload`, `common.settings`, `common.decorators`,
       `common.logging` — exits 0.
 - [ ] `Dockerfile` contains no `poetry`/`POETRY` token, obtains `uv` via
-      `COPY --from=ghcr.io/astral-sh/uv:<pinned>`, runs `uv sync --frozen --no-dev
-      --no-cache`, sets `UV_PROJECT_ENVIRONMENT` and `UV_FROZEN`, and its `CMD` invokes
+      `COPY --from=ghcr.io/astral-sh/uv:<pinned>`, runs `uv sync --frozen --no-dev`, sets
+      `UV_PROJECT_ENVIRONMENT`, `UV_FROZEN` and `UV_NO_CACHE`, and its `CMD` invokes
       `uv run --no-sync`.
 - [ ] `app/main.py`'s `ConfigChangePoller` command list starts with
       `["uv", "run", "--no-sync", "python", ...]` and contains no `"poetry"`.
@@ -67,8 +68,10 @@ single change, leaving no Poetry reference anywhere in the repository.
 - [ ] `.github/dependabot.yml` uses `package-ecosystem: uv` with directory, schedule, and
       group unchanged.
 - [ ] `uvx pre-commit run --all-files` passes.
-- [ ] A repository-wide search for `poetry`/`POETRY`, excluding the upstream template
-      comment block in `.gitignore`, returns no matches.
+- [ ] No operational file (code, `Dockerfile`, `pyproject.toml`, pre-commit / CI /
+      Dependabot config) references `poetry`/`POETRY`. The upstream template comment
+      block in `.gitignore` and this change's own `.agent-docs/` spec and issue — which
+      necessarily name Poetry to describe the migration — are not matches.
 - [ ] CI (`ci-arm64.yml`) builds and pushes the Docker image successfully on the branch.
 
 ---

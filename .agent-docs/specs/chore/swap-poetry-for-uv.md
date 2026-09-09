@@ -20,9 +20,10 @@ Replace Poetry with `uv` everywhere it appears:
 - `poetry.lock` is replaced by a freshly resolved `uv.lock`; `requirements.txt` is
   deleted.
 - The Docker image installs `uv` by copying it from Astral's published, version-pinned
-  image and provisions the environment with `uv sync --frozen --no-dev --no-cache`. The
-  container entrypoint and the in-app config-reload restart command run through
-  `uv run --no-sync`.
+  image and provisions the environment with `uv sync --frozen --no-dev`, with
+  `UV_NO_CACHE=1` set image-wide so neither the build nor the runtime `uv run` reads or
+  writes a cache. The container entrypoint and the in-app config-reload restart command
+  run through `uv run --no-sync`.
 - The pre-commit config drops the three Poetry hooks and gains the `uv-pre-commit`
   `uv-lock` hook. The mypy, isort, black and ruff hook *definitions* (ids, args,
   `additional_dependencies`) are untouched; their pinned `rev`s are realigned to the
@@ -107,11 +108,14 @@ exactly as `poetry run` did; and `docker build` produces a functionally identica
 - Add `COPY --from=ghcr.io/astral-sh/uv:<pinned> /uv /uvx /bin/` near the top
   (`<pinned>` = a fixed `uv` version, not a floating tag).
 - `COPY pyproject.toml uv.lock ./` (was `pyproject.toml poetry.lock`).
-- `RUN uv sync --frozen --no-dev --no-cache` in place of
-  `poetry install --no-root --only main`. `--no-cache` keeps the build (run as root) from
-  leaving a populated cache in the image; the runtime `uv run --no-sync` never touches it.
+- `RUN uv sync --frozen --no-dev` in place of `poetry install --no-root --only main`.
 - `ENV UV_PROJECT_ENVIRONMENT=/app/.venv` (a fixed venv path both build and runtime
-  agree on) and `ENV UV_FROZEN=1` (runtime `uv run` never attempts a re-resolve).
+  agree on), `ENV UV_FROZEN=1` (runtime `uv run` never attempts a re-resolve), and
+  `ENV UV_NO_CACHE=1` so no `uv` invocation — the root-run build `sync` or the
+  `sel_user`-run `uv run --no-sync` — reads or writes a cache. This removes any
+  cache-directory permission question for the unprivileged runtime user and keeps the
+  image layer free of a populated cache; `--no-cache` on the `sync` line would be
+  redundant with it.
 - `CMD ["uv", "run", "--no-sync", "python", "./app/main.py", "--config-file",
   "/config/config.yml"]`.
 - The geckodriver / firefox-esr / xvfb / `useradd` / `VOLUME /config` lines are
@@ -164,8 +168,8 @@ suite, so "tests" here means the verification gates the change must pass, exerci
 highest seam that is runnable.
 
 - **Primary seam — the Docker image build.** `docker build .` exercises the entire `uv`
-  path: image-copy of `uv`, `uv sync --frozen --no-dev --no-cache` against the committed
-  lock, and the `uv run` entrypoint. This machine has no Docker daemon, so this seam runs in CI
+  path: image-copy of `uv`, `uv sync --frozen --no-dev` against the committed lock, and
+  the `uv run` entrypoint. This machine has no Docker daemon, so this seam runs in CI
   (`.github/workflows/ci-arm64.yml`, which builds and pushes on every branch push) rather
   than locally. A green CI build on the branch is the acceptance signal for stories 1, 3
   and 8.
@@ -177,8 +181,10 @@ highest seam that is runnable.
 - **Hook seam.** `uvx pre-commit run --all-files` must pass, proving the new `uv-lock`
   hook and the retained mypy/isort/black/ruff hooks all work against the rewritten
   manifest and that `uv.lock` is in sync (story 5).
-- **Grep gate.** A repository-wide search for `poetry` / `POETRY` (excluding
-  `.gitignore`'s upstream template comment) returns nothing (story 9).
+- **Grep gate.** No operational file — code, `Dockerfile`, `pyproject.toml`, pre-commit /
+  CI / Dependabot config — references `poetry` / `POETRY` (story 9). `.gitignore`'s
+  upstream template comment and this change's own `.agent-docs/` spec and issue (which
+  name Poetry only to describe the migration) are expected and not matches.
 - No prior art for tests exists in the codebase; none is added here (out of scope).
 
 ## Out of Scope
