@@ -1,8 +1,10 @@
 FROM python:3.11-slim
 
-ENV POETRY_HOME=/opt/poetry
-ENV POETRY_VENV=/opt/poetry-venv
-ENV POETRY_CACHE_DIR=/opt/.cache
+COPY --from=ghcr.io/astral-sh/uv:0.12.10 /uv /uvx /bin/
+
+ENV UV_PROJECT_ENVIRONMENT=/app/.venv
+ENV UV_FROZEN=1
+ENV UV_NO_CACHE=1
 
 RUN useradd -ms /bin/bash sel_user
 
@@ -12,23 +14,17 @@ RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.33.0/geckod
 RUN tar -xzvf geckodriver-v0.33.0-linux-aarch64.tar.gz -C /usr/local/bin
 RUN chmod +x /usr/local/bin/geckodriver
 
-RUN python3 -m venv ${POETRY_VENV} \
-    && ${POETRY_VENV}/bin/pip install --upgrade pip setuptools wheel
-
-ENV PATH="${PATH}:${POETRY_VENV}/bin"
-
 WORKDIR /app
 RUN mkdir -p config
 VOLUME /config
 
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock ./
 
-RUN ${POETRY_VENV}/bin/pip install poetry
-RUN poetry install --no-root --only main
- 
+RUN uv sync --frozen --no-dev
+
 USER sel_user
 
 COPY app ./app
 ENV ENV_FLAG="docker"
 
-CMD [ "poetry", "run", "python", "./app/main.py", "--config-file", "/config/config.yml"]
+CMD [ "uv", "run", "--no-sync", "python", "./app/main.py", "--config-file", "/config/config.yml"]
