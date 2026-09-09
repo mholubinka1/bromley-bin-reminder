@@ -15,25 +15,28 @@ single change, leaving no Poetry reference anywhere in the repository.
 
 - Rewrite `pyproject.toml` from the legacy `[tool.poetry]` tables into PEP 621
   `[project]` metadata plus a `[dependency-groups]` `dev` group and a `[tool.uv]` section
-  with `package = false`. Caret constraints become `>=` lower bounds; the `lxml` extra is
-  preserved; `requires-python = ">=3.11"`; `authors` carried across in PEP 621 form; the
-  `[tool.ruff.lint]` section kept verbatim; `[build-system]` removed.
+  with `package = false`. Each caret constraint is translated to the range it means
+  (`^x.y.z` -> `>=x.y.z,<{next major}.0.0`), preserving the upper bound Poetry implied;
+  the `lxml` extra is preserved; `requires-python = ">=3.11"`; `authors` carried across
+  in PEP 621 form; the `[tool.ruff.lint]` section kept verbatim; `[build-system]` removed.
 - Generate and commit `uv.lock`. Delete `poetry.lock` and `requirements.txt`.
 - Add `.python-version` containing `3.11`.
 - Dockerfile: install `uv` by copying from a version-pinned `ghcr.io/astral-sh/uv` image;
-  `uv sync --frozen --no-dev` in place of the Poetry bootstrap and install; set
-  `UV_PROJECT_ENVIRONMENT`, `UV_FROZEN`, and a writable `UV_CACHE_DIR` for the
-  `sel_user` runtime; entrypoint `uv run --no-sync python ./app/main.py ...`. Geckodriver,
-  firefox-esr, xvfb, `useradd`, and `VOLUME /config` lines unchanged.
+  `uv sync --frozen --no-dev --no-cache` in place of the Poetry bootstrap and install;
+  set `UV_PROJECT_ENVIRONMENT` and `UV_FROZEN`; entrypoint
+  `uv run --no-sync python ./app/main.py ...`. Geckodriver, firefox-esr, xvfb, `useradd`,
+  and `VOLUME /config` lines unchanged.
 - `app/main.py`: the config-reload restart command list uses `uv run --no-sync` instead
   of `poetry run`. No other logic changes.
 - `.pre-commit-config.yaml`: drop the `poetry` and `poetry-plugin-export` repos; add the
-  `astral-sh/uv-pre-commit` `uv-lock` hook. mypy, isort, black, ruff hooks untouched.
+  `astral-sh/uv-pre-commit` `uv-lock` hook. The mypy/isort/black/ruff hook definitions
+  (ids, args, `additional_dependencies`) are untouched; their pinned `rev`s are bumped to
+  the tags matching the versions the refreshed lock resolved (`black` already matched).
 - `.github/dependabot.yml`: `package-ecosystem: pip` -> `uv`; directory, schedule, and
   group unchanged.
-- Dependency refresh happens by construction: `uv lock` resolves each translated
-  constraint to its newest permitted version. No constraint loosened or bumped to a new
-  major.
+- Dependency refresh happens by construction: `uv lock` resolves each constraint to its
+  newest permitted version, and the linter hook `rev`s are realigned to those versions.
+  No constraint's bounds are edited.
 - `uv`, `uv-pre-commit`, and the `ghcr.io/astral-sh/uv` image are all pinned to the same
   released `uv` version.
 
@@ -47,17 +50,20 @@ single change, leaving no Poetry reference anywhere in the repository.
       sync with `pyproject.toml`.
 - [ ] `poetry.lock` and `requirements.txt` no longer exist in the repository.
 - [ ] `.python-version` exists and contains `3.11`.
-- [ ] `uv sync` succeeds on a clean checkout and `uv run python -c "import app.main,
-      app.scraper, app.notify, app.notification, app.collection, app.reload,
-      app.common.settings, app.common.decorators, app.common.logging"` exits 0.
+- [ ] `uv sync` succeeds on a clean checkout and, with `app/` on `sys.path` (how the app
+      is actually run), importing every `app/` module —  `main`, `scraper`, `notify`,
+      `notification`, `collection`, `reload`, `common.settings`, `common.decorators`,
+      `common.logging` — exits 0.
 - [ ] `Dockerfile` contains no `poetry`/`POETRY` token, obtains `uv` via
-      `COPY --from=ghcr.io/astral-sh/uv:<pinned>`, runs `uv sync --frozen --no-dev`, and
-      its `CMD` invokes `uv run --no-sync`.
+      `COPY --from=ghcr.io/astral-sh/uv:<pinned>`, runs `uv sync --frozen --no-dev
+      --no-cache`, sets `UV_PROJECT_ENVIRONMENT` and `UV_FROZEN`, and its `CMD` invokes
+      `uv run --no-sync`.
 - [ ] `app/main.py`'s `ConfigChangePoller` command list starts with
       `["uv", "run", "--no-sync", "python", ...]` and contains no `"poetry"`.
 - [ ] `.pre-commit-config.yaml` references neither `python-poetry/poetry` nor
       `poetry-plugin-export`, and includes the `astral-sh/uv-pre-commit` `uv-lock` hook;
-      the mypy/isort/black/ruff hooks are unchanged.
+      the mypy/isort/black/ruff hook definitions (ids, args, `additional_dependencies`)
+      are unchanged, with only their pinned `rev`s realigned to the refreshed versions.
 - [ ] `.github/dependabot.yml` uses `package-ecosystem: uv` with directory, schedule, and
       group unchanged.
 - [ ] `uvx pre-commit run --all-files` passes.

@@ -20,14 +20,20 @@ Replace Poetry with `uv` everywhere it appears:
 - `poetry.lock` is replaced by a freshly resolved `uv.lock`; `requirements.txt` is
   deleted.
 - The Docker image installs `uv` by copying it from Astral's published, version-pinned
-  image and provisions the environment with `uv sync --frozen --no-dev`. The container
-  entrypoint and the in-app config-reload restart command run through `uv run --no-sync`.
+  image and provisions the environment with `uv sync --frozen --no-dev --no-cache`. The
+  container entrypoint and the in-app config-reload restart command run through
+  `uv run --no-sync`.
 - The pre-commit config drops the three Poetry hooks and gains the `uv-pre-commit`
-  `uv-lock` hook. The mypy, isort, black and ruff hooks are untouched.
+  `uv-lock` hook. The mypy, isort, black and ruff hook *definitions* (ids, args,
+  `additional_dependencies`) are untouched; their pinned `rev`s are realigned to the
+  versions the refreshed lock resolved, as part of the dependency refresh below.
 - Dependabot switches from the `pip` ecosystem to the `uv` ecosystem.
 - Because the lock is regenerated from scratch, every dependency moves to the newest
   version its existing version constraint already permits. No constraint is loosened or
-  bumped to a new major.
+  bumped to a new major. The pre-commit hook `rev`s for the linters follow the same
+  rule — each moves to the newest release its dev-dependency constraint already allows
+  (e.g. isort's `>=8.0.1,<10.0.0` admits 9.x), so the hook and the locked library stay
+  on the same version.
 
 After the change a contributor clones the repo, runs `uv sync`, and has a working
 environment; `uv run python ./app/main.py --config-file ...` starts the reminder service
@@ -65,9 +71,17 @@ exactly as `poetry run` did; and `docker build` produces a functionally identica
   - `[project]` — `name`, `version`, `description`, `readme`, `requires-python = ">=3.11"`,
     and `dependencies` as a PEP 508 list.
   - `[dependency-groups]` — `dev = [...]` holding isort, black, mypy, ruff, pre-commit.
-- Caret constraints (`^x.y.z`) become `>=x.y.z` lower bounds. `pytz = "^2026.1"` and the
-  other exact-looking pins follow the same rule. The `lxml` extra becomes
-  `lxml[html-clean]>=6.0.4`.
+- Each caret constraint (`^x.y.z`) on a *package* is translated to the range it actually
+  means — `>=x.y.z,<{next major}.0.0` — so the upper bound Poetry implied is preserved
+  rather than dropped (dropping it would loosen the constraint). `pytz = "^2026.1"`
+  becomes `pytz>=2026.1,<2027.0`; the `lxml` extra becomes
+  `lxml[html-clean]>=6.0.4,<7.0.0`. Constraints already written as explicit ranges
+  (`isort`, `mypy`, `ruff`) are copied across unchanged.
+- The one exception is the interpreter constraint: `python = "^3.11"` becomes
+  `requires-python = ">=3.11"`, left unbounded. A `<4.0` cap on `requires-python` is not
+  idiomatic PEP 621 and needlessly narrows the resolver; there is no Python 4 to guard
+  against. The `.python-version` file and the `python:3.11-slim` base still pin the
+  actual runtime to 3.11.
 - Remove the `[build-system]` table. Add `[tool.uv]` with `package = false` so `uv`
   treats the repo as a non-packaged project (the Poetry equivalent of
   `package-mode = false`).
@@ -93,11 +107,11 @@ exactly as `poetry run` did; and `docker build` produces a functionally identica
 - Add `COPY --from=ghcr.io/astral-sh/uv:<pinned> /uv /uvx /bin/` near the top
   (`<pinned>` = a fixed `uv` version, not a floating tag).
 - `COPY pyproject.toml uv.lock ./` (was `pyproject.toml poetry.lock`).
-- `RUN uv sync --frozen --no-dev` in place of `poetry install --no-root --only main`.
-- `ENV UV_PROJECT_ENVIRONMENT=/app/.venv`, `ENV UV_FROZEN=1`, and a writable
-  `ENV UV_CACHE_DIR=/opt/uv-cache` (created and `chown`ed to `sel_user`, or made
-  world-writable) so the runtime `uv run` as `sel_user` never attempts a re-resolve or
-  fails on an unwritable cache.
+- `RUN uv sync --frozen --no-dev --no-cache` in place of
+  `poetry install --no-root --only main`. `--no-cache` keeps the build (run as root) from
+  leaving a populated cache in the image; the runtime `uv run --no-sync` never touches it.
+- `ENV UV_PROJECT_ENVIRONMENT=/app/.venv` (a fixed venv path both build and runtime
+  agree on) and `ENV UV_FROZEN=1` (runtime `uv run` never attempts a re-resolve).
 - `CMD ["uv", "run", "--no-sync", "python", "./app/main.py", "--config-file",
   "/config/config.yml"]`.
 - The geckodriver / firefox-esr / xvfb / `useradd` / `VOLUME /config` lines are
@@ -121,7 +135,12 @@ exactly as `poetry run` did; and `docker build` produces a functionally identica
     hooks:
       - id: uv-lock
   ```
-- mypy, isort, black, ruff hooks are left exactly as they are.
+- The mypy, isort, black and ruff hook definitions (ids, args,
+  `additional_dependencies`) are left exactly as they are. Their pinned `rev`s are
+  bumped to match the versions the refreshed lock resolved (`mirrors-mypy` → the tag
+  for the locked mypy, `pycqa/isort` → the locked isort, `ruff-pre-commit` → the locked
+  ruff), so hook and library never drift apart. `black`'s pin already matched and is
+  left alone.
 
 ### `.github/dependabot.yml`
 
@@ -133,6 +152,10 @@ exactly as `poetry run` did; and `docker build` produces a functionally identica
 - Whatever `uv lock` resolves from the translated constraints is the accepted set — this
   is the "latest within existing ranges" outcome by construction. No manual version
   picking.
+- The linter pre-commit hook `rev`s (`mirrors-mypy`, `pycqa/isort`, `ruff-pre-commit`)
+  are bumped to the tags matching those resolved versions, so a hook never runs a
+  different version of a tool than the one the lock pins. This is the same
+  latest-within-range rule applied to the hook pins; it is not a constraint change.
 
 ## Testing Decisions
 
@@ -141,17 +164,16 @@ suite, so "tests" here means the verification gates the change must pass, exerci
 highest seam that is runnable.
 
 - **Primary seam — the Docker image build.** `docker build .` exercises the entire `uv`
-  path: image-copy of `uv`, `uv sync --frozen --no-dev` against the committed lock, and
-  the `uv run` entrypoint. This machine has no Docker daemon, so this seam runs in CI
+  path: image-copy of `uv`, `uv sync --frozen --no-dev --no-cache` against the committed
+  lock, and the `uv run` entrypoint. This machine has no Docker daemon, so this seam runs in CI
   (`.github/workflows/ci-arm64.yml`, which builds and pushes on every branch push) rather
   than locally. A green CI build on the branch is the acceptance signal for stories 1, 3
   and 8.
 - **Local seam — environment resolution and import smoke.** `uv sync` must succeed, and
-  `uv run python -c "import app.main, app.scraper, app.notify, app.notification,
-  app.collection, app.reload, app.common.settings, app.common.decorators,
-  app.common.logging"` must import every module cleanly under the resolved environment.
-  This catches a dropped dependency or a bad constraint translation without needing
-  Docker.
+  every `app/` module must import cleanly under the resolved environment with `app/` on
+  `sys.path` (the app runs as `python ./app/main.py`, so its modules import as bare
+  `main`, `scraper`, `common.logging`, … — not `app.main`). This catches a dropped
+  dependency or a bad constraint translation without needing Docker.
 - **Hook seam.** `uvx pre-commit run --all-files` must pass, proving the new `uv-lock`
   hook and the retained mypy/isort/black/ruff hooks all work against the rewritten
   manifest and that `uv.lock` is in sync (story 5).
@@ -161,11 +183,14 @@ highest seam that is runnable.
 
 ## Out of Scope
 
-- Loosening or raising any dependency version constraint, or any deliberate major-version
-  upgrade. Only the lock moves, within current ranges.
+- Loosening or raising any dependency version constraint. Resolved versions (and the
+  linter hook `rev`s that track them) may move to the newest release each existing
+  constraint already allows — including across a major boundary the constraint already
+  spans, as `isort`'s `<10.0.0` spans 9.x — but no constraint's bounds are edited.
 - Adding a test suite, a CI lint/test job, or any change to
   `.github/workflows/ci-arm64.yml`.
-- Changes to the mypy (`setup.cfg`), ruff, isort or black configuration.
+- Changes to the mypy (`setup.cfg`), ruff, isort or black *configuration* — hook ids,
+  args, `additional_dependencies`, or the tool config files. Only the pinned `rev`s move.
 - README content (the setup sections are currently empty and stay that way).
 - `.vscode/launch.json` (uses `debugpy` directly, no Poetry reference).
 - Publishing the project as an installable package.

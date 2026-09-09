@@ -47,9 +47,11 @@ def main() -> None:
         logger.exception("Could not load startup configuration.")
         sys.exit(1)
 
+    # Keep in step with the Dockerfile CMD — both launch the app the same way.
     command = [
-        "poetry",
+        "uv",
         "run",
+        "--no-sync",
         "python",
         "./app/main.py",
         "--config-file",
