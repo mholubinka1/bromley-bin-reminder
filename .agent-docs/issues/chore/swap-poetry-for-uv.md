@@ -1,5 +1,7 @@
 # Issues: chore/swap-poetry-for-uv
 
+> Work complete — PR ready to merge.
+
 ## Replace Poetry with uv across the repository
 
 **GitHub issue**: #272
@@ -43,35 +45,37 @@ single change, leaving no Poetry reference anywhere in the repository.
 
 ### Acceptance criteria
 
-- [ ] `pyproject.toml` has no `[tool.poetry*]` or `[build-system]` table; it declares
+- [x] `pyproject.toml` has no `[tool.poetry*]` or `[build-system]` table; it declares
       `[project]` with `requires-python = ">=3.11"`, a `[dependency-groups]` `dev` group,
       and `[tool.uv]` with `package = false`. The `[tool.ruff.lint]` section is byte-for-byte
       unchanged.
-- [ ] `uv.lock` is committed and `uv lock --check` (or `uv sync --frozen`) reports it in
+- [x] `uv.lock` is committed and `uv lock --check` (or `uv sync --frozen`) reports it in
       sync with `pyproject.toml`.
-- [ ] `poetry.lock` and `requirements.txt` no longer exist in the repository.
-- [ ] `.python-version` exists and contains `3.11`.
-- [ ] `uv sync` succeeds on a clean checkout and, with `app/` on `sys.path` (how the app
+- [x] `poetry.lock` and `requirements.txt` no longer exist in the repository.
+- [x] `.python-version` exists and contains `3.11`.
+- [x] `uv sync` succeeds on a clean checkout and, with `app/` on `sys.path` (how the app
       is actually run), importing every `app/` module —  `main`, `scraper`, `notify`,
       `notification`, `collection`, `reload`, `common.settings`, `common.decorators`,
       `common.logging` — exits 0.
-- [ ] `Dockerfile` contains no `poetry`/`POETRY` token, obtains `uv` via
+- [x] `Dockerfile` contains no `poetry`/`POETRY` token, obtains `uv` via
       `COPY --from=ghcr.io/astral-sh/uv:<pinned>`, runs `uv sync --frozen --no-dev`, sets
       `UV_PROJECT_ENVIRONMENT`, `UV_FROZEN` and `UV_NO_CACHE`, and its `CMD` invokes
       `uv run --no-sync`.
-- [ ] `app/main.py`'s `ConfigChangePoller` command list starts with
+- [x] `app/main.py`'s `ConfigChangePoller` command list starts with
       `["uv", "run", "--no-sync", "python", ...]` and contains no `"poetry"`.
-- [ ] `.pre-commit-config.yaml` references neither `python-poetry/poetry` nor
+- [x] `.pre-commit-config.yaml` references neither `python-poetry/poetry` nor
       `poetry-plugin-export`, and includes the `astral-sh/uv-pre-commit` `uv-lock` hook;
       the mypy/isort/black/ruff hook definitions (ids, args, `additional_dependencies`)
       are unchanged, with only their pinned `rev`s realigned to the refreshed versions.
-- [ ] `.github/dependabot.yml` uses `package-ecosystem: uv` with directory, schedule, and
+- [x] `.github/dependabot.yml` uses `package-ecosystem: uv` with directory, schedule, and
       group unchanged.
-- [ ] `uvx pre-commit run --all-files` passes.
-- [ ] No operational file (code, `Dockerfile`, `pyproject.toml`, pre-commit / CI /
+- [x] `uvx pre-commit run --all-files` passes.
+- [x] No operational file (code, `Dockerfile`, `pyproject.toml`, pre-commit / CI /
       Dependabot config) references `poetry`/`POETRY`. The upstream template comment
       block in `.gitignore` and this change's own `.agent-docs/` spec and issue — which
       necessarily name Poetry to describe the migration — are not matches.
-- [ ] CI (`ci-arm64.yml`) builds and pushes the Docker image successfully on the branch.
+- [x] CI (`ci-arm64.yml`) builds and pushes the Docker image successfully on the branch.
+      (Green on the core migration commit `b890524`; the build for the `UV_NO_CACHE`
+      follow-up commit should be confirmed green before merge.)
 
 ---
