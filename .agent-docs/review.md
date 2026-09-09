@@ -17,4 +17,4 @@ from — for example:
 
 ## Criteria
 
-_None yet._
+- **Unprivileged runtime needs writable paths**: flag a container image that drops to a non-root user and then runs a tool which reads or writes a cache, home, or state directory, without either making that directory writable for the user or disabling the access explicitly. (PR #273)
