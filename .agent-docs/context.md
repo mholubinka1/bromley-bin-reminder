@@ -1,6 +1,6 @@
 # Bromley Bin Reminder
 
-A scheduled service that scrapes the Bromley Council waste-collection website and emails reminders for upcoming bin collections.
+A scheduled service that scrapes the Bromley Council waste-collection website and sends email and ntfy reminders for upcoming bin collections.
 
 ## Language
 
@@ -17,8 +17,20 @@ One of the distinct categories of council-collected waste (Mixed Recycling, Pape
 _Avoid_: waste type, bin type, category
 
 **Reminder**:
-The daily email notification sent for collections that are tomorrow or within the current reminder window. Triggered by the scheduled run comparing scraped collections against the current date.
-_Avoid_: notification, alert, email
+The scheduled message sent for collections that are tomorrow (nightly) or within the current reminder window (weekly, Sundays). Delivered over each configured Channel. Triggered by the scheduled run comparing scraped collections against the current date.
+_Avoid_: alert
+
+**Channel**:
+A delivery route for Reminders: email (SMTP) or ntfy. Email is always configured; ntfy is optional. Channels are independent — one failing does not block the other.
+_Avoid_: transport, medium
+
+**ntfy**:
+The push-notification service (ntfy.sh by default) that delivers Reminders to subscribed phones via a topic. Sends one notification per Service, each tagged with that Service's emoji; night-before notifications are high priority.
+_Avoid_: push, ntfy notification
+
+**Topic**:
+The ntfy channel name a Reminder is published to. Effectively a secret on public ntfy.sh (anyone knowing it can subscribe), so it lives in the config file, never in the repo. Limited to 64 characters on ntfy.sh.
+_Avoid_: channel, room
 
 **Scraper**:
 The component (`WasteworksScraper`) that drives a headless Firefox browser via Selenium to render the WasteWorks page and extract collection data with BeautifulSoup.

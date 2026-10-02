@@ -11,3 +11,8 @@ smtp:
   password: $password                                 # if this is blank, no authentication is used
   server: smtp.gmail.com
   port: 587
+
+# Optional: also send push notifications via ntfy. Remove or leave commented to disable.
+# ntfy:
+#   server: https://ntfy.sh                             # optional, defaults to https://ntfy.sh; do not embed credentials in the URL
+#   topic: use-something-long-and-unguessable           # ntfy.sh limits topic names to 64 characters; anyone who knows a public topic name can read it

@@ -13,6 +13,7 @@ logger: Logger = getLogger(APP_LOGGER_NAME)
 
 DEFAULT_DAILY_POLL_TIME = "18:00"
 DEFAULT_TZ = "Europe/London"
+DEFAULT_NTFY_SERVER = "https://ntfy.sh"
 
 
 def is_null_or_empty(s: str | None) -> bool:
@@ -36,6 +37,25 @@ class SMTPSettings:
     port: int
 
 
+@dataclass
+class NtfySettings:
+    server: str
+    topic: str
+
+
+def _build_ntfy_settings(ntfy_yaml: dict[str, Any] | None) -> NtfySettings | None:
+    if not ntfy_yaml:
+        return None
+    topic = str(ntfy_yaml.get("topic") or "").strip()
+    if is_null_or_empty(topic):
+        return None
+    server = str(ntfy_yaml.get("server") or "").strip()
+    return NtfySettings(
+        server=DEFAULT_NTFY_SERVER if is_null_or_empty(server) else server,
+        topic=topic,
+    )
+
+
 class ApplicationSettings:
     def __init__(self, yaml_settings: dict[str, Any]) -> None:
         self.wasteworks_url = yaml_settings["remind"]["url"]
@@ -50,6 +70,7 @@ class ApplicationSettings:
             server=yaml_settings["smtp"]["server"],
             port=yaml_settings["smtp"]["port"],
         )
+        self.ntfy = _build_ntfy_settings(yaml_settings.get("ntfy"))
 
 
 class ConfigLoader:

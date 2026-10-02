@@ -3,13 +3,16 @@ from email.mime.multipart import MIMEMultipart
 from logging import Logger, getLogger
 from smtplib import SMTP
 
+import requests
 from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import is_null_or_empty
-from notification import WasteCollectionNotification
+from common.settings import ApplicationSettings, is_null_or_empty
+from notification import NtfyNotification, WasteCollectionNotification
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
+
+NTFY_TIMEOUT_SECONDS = 10
 
 
 class SMTPClient:
@@ -37,11 +40,55 @@ class SMTPClient:
         client.quit()
 
 
+class NtfyClient:
+    _server: str
+    _topic: str
+
+    def __init__(self, server: str, topic: str) -> None:
+        self._server = server
+        self._topic = topic
+
+    def publish(self, notification: NtfyNotification) -> None:
+        response = requests.post(
+            self._server,
+            json={
+                "topic": self._topic,
+                "title": notification.title,
+                "message": notification.message,
+                "priority": notification.priority,
+                "tags": notification.tags,
+            },
+            timeout=NTFY_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+
+
 class Notify:
     _client: SMTPClient
+    _ntfy_client: NtfyClient | None
 
-    def __init__(self, email_client: SMTPClient):
+    def __init__(
+        self, email_client: SMTPClient, ntfy_client: NtfyClient | None = None
+    ) -> None:
         self._client = email_client
+        self._ntfy_client = ntfy_client
+
+    def send_ntfy(self, notifications: list[NtfyNotification]) -> None:
+        if self._ntfy_client is None:
+            return
+        for notification in notifications:
+            try:
+                self._publish_ntfy(self._ntfy_client, notification)
+            except Exception:
+                logger.exception(
+                    f"Failed to send ntfy notification [{notification.title}]"
+                )
+            else:
+                logger.info(f"Sent ntfy notification [{notification.title}]")
+
+    @retry()
+    def _publish_ntfy(self, client: NtfyClient, notification: NtfyNotification) -> None:
+        client.publish(notification)
 
     @retry()
     def send_email(
@@ -56,3 +103,18 @@ class Notify:
         msg["To"] = recipients
         self._client.send_mail(sender, email_addresses, message=msg)
         logger.info(f"Sent notification e-mail to [{recipients}]")
+
+
+def build_notify(settings: ApplicationSettings) -> Notify:
+    smtp_client = SMTPClient(
+        username=settings.smtp.username,
+        password=settings.smtp.password,
+        server=settings.smtp.server,
+        port=settings.smtp.port,
+    )
+    ntfy_client = (
+        NtfyClient(server=settings.ntfy.server, topic=settings.ntfy.topic)
+        if settings.ntfy
+        else None
+    )
+    return Notify(email_client=smtp_client, ntfy_client=ntfy_client)
