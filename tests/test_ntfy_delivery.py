@@ -91,12 +91,8 @@ def test_one_failing_notification_does_not_stop_the_others_being_delivered() -> 
         notify.send_ntfy(notifications)
 
     # Then the first and third are still delivered and no exception propagates
-    delivered = [
-        call.kwargs["json"]["title"]
-        for call in mock_post.call_args_list
-        if call.kwargs["json"]["title"] != "Second"
-    ]
-    assert delivered == ["First", "Third"]
+    attempted = [call.kwargs["json"]["title"] for call in mock_post.call_args_list]
+    assert attempted == ["First", "Second", "Second", "Second", "Third"]
 
     # And the failure is logged by title without revealing the topic
     logs = log_stream.getvalue()

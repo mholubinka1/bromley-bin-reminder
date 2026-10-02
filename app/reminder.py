@@ -25,5 +25,5 @@ def send_reminders(
             notification, settings.smtp.username, settings.remind.target_emails
         )
     except Exception:
-        logger.exception("Failed to send email reminder.")
+        logger.exception(f"Failed to send {period} email reminder.")
     notify.send_ntfy(build_ntfy_notifications(collections, period))
