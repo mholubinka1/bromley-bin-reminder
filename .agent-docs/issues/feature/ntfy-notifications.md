@@ -1,5 +1,7 @@
 # Issues: feature/ntfy-notifications
 
+> Work complete — PR ready to merge.
+
 ## Build per-bin ntfy notifications
 
 **GitHub issue**: #277
@@ -16,16 +18,16 @@ Remove the unused `_create_push` stub.
 
 ### Acceptance criteria
 
-- [ ] Given collections for several Services and period `tomorrow`, one notification per
+- [x] Given collections for several Services and period `tomorrow`, one notification per
       Service is produced, each titled `<Service>: tomorrow`, body `Put it out tonight.`,
       priority high (4), tagged with only that Service's emoji.
-- [ ] Given period `week`, one notification per Service titled `<Service>: this week`,
+- [x] Given period `week`, one notification per Service titled `<Service>: this week`,
       body `Collection is <Weekday> <ordinal> <Month>.`, default priority (3), in the order
       supplied.
-- [ ] Each of the five Services maps to its confirmed emoji; no colour tags are used.
-- [ ] An unknown Service yields a notification with a generic tag instead of an error.
-- [ ] An empty list yields no notifications; an unknown period raises.
-- [ ] `uv run pytest` passes.
+- [x] Each of the five Services maps to its confirmed emoji; no colour tags are used.
+- [x] An unknown Service yields a notification with a generic tag instead of an error.
+- [x] An empty list yields no notifications; an unknown period raises.
+- [x] `uv run pytest` passes.
 
 ---
 
@@ -45,12 +47,12 @@ that attempts every notification even if one fails.
 
 ### Acceptance criteria
 
-- [ ] Config without an `ntfy:` block, or with a blank topic, loads and disables ntfy.
-- [ ] With a topic, each notification is posted as JSON to the server containing topic,
+- [x] Config without an `ntfy:` block, or with a blank topic, loads and disables ntfy.
+- [x] With a topic, each notification is posted as JSON to the server containing topic,
       title, message, priority and tags.
-- [ ] A failing notification is retried; once retries are exhausted the remaining
+- [x] A failing notification is retried; once retries are exhausted the remaining
       notifications are still sent and the failure is logged without the topic.
-- [ ] Server defaults to `https://ntfy.sh` when omitted.
+- [x] Server defaults to `https://ntfy.sh` when omitted.
 
 ---
 
@@ -70,11 +72,11 @@ README and context glossary.
 
 ### Acceptance criteria
 
-- [ ] Weekly job with ntfy configured sends the email plus one ntfy notification per bin
+- [x] Weekly job with ntfy configured sends the email plus one ntfy notification per bin
       due this week; daily job sends the email plus one per bin due tomorrow.
-- [ ] With ntfy not configured, only email is sent, as before.
-- [ ] If email sending fails, ntfy notifications are still sent, and vice versa.
-- [ ] `config/config.yml.template` and README document the ntfy block, including the
+- [x] With ntfy not configured, only email is sent, as before.
+- [x] If email sending fails, ntfy notifications are still sent, and vice versa.
+- [x] `config/config.yml.template` and README document the ntfy block, including the
       64-character topic limit.
-- [ ] A real notification sent from the finished code to the test topic matches the
+- [x] A real notification sent from the finished code to the test topic matches the
       locked format.
