@@ -1,7 +1,5 @@
 import logging.config
 import os
-import subprocess
-import sys
 import time
 from logging import Logger, getLogger
 
@@ -35,8 +33,9 @@ class ConfigChangePoller:
                         f"Config change detected: {self._path}. Restarting application."
                     )
                     self._last_modified_time = current_modified_time
-                    subprocess.Popen(self._command)
-                    sys.exit(0)
+                    # Replace this process in place so the old instance can never
+                    # keep running (and writing the shared log file) beside the new one.
+                    os.execvp(self._command[0], self._command)
             except FileNotFoundError:
                 logger.error("Config file not found.")
             except Exception:
