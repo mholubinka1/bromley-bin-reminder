@@ -73,6 +73,20 @@ def test_ntfy_uses_the_default_server_when_the_server_is_blank() -> None:
     assert settings.ntfy.server == "https://ntfy.sh"
 
 
+def test_ntfy_server_is_stripped_of_surrounding_whitespace() -> None:
+    # Given an ntfy block whose server has surrounding whitespace
+    config = _yaml_settings(
+        ntfy={"server": " https://ntfy.example.com ", "topic": "my-bins"}
+    )
+
+    # When the settings are loaded
+    settings = ApplicationSettings(config)
+
+    # Then the server is trimmed
+    assert settings.ntfy is not None
+    assert settings.ntfy.server == "https://ntfy.example.com"
+
+
 def test_ntfy_keeps_a_custom_server() -> None:
     # Given an ntfy block with a topic and a custom server
     config = _yaml_settings(
