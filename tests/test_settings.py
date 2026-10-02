@@ -1,23 +1,5 @@
-from typing import Any
-
 from common.settings import ApplicationSettings
-
-
-def _yaml_settings(**extra: Any) -> dict[str, Any]:
-    return {
-        "remind": {
-            "url": "https://example.com/collections",
-            "email_addresses": ["a@example.com"],
-            "time": "18:00",
-        },
-        "smtp": {
-            "username": "a",
-            "password": "b",
-            "server": "s",
-            "port": 587,
-        },
-        **extra,
-    }
+from support import yaml_settings as _yaml_settings
 
 
 def test_ntfy_is_not_configured_when_the_yaml_has_no_ntfy_block() -> None:
@@ -54,6 +36,18 @@ def test_ntfy_uses_the_public_server_when_none_is_configured() -> None:
     # Then the default ntfy server is used and the topic is preserved
     assert settings.ntfy is not None
     assert settings.ntfy.server == "https://ntfy.sh"
+    assert settings.ntfy.topic == "my-bins"
+
+
+def test_ntfy_topic_is_stripped_of_surrounding_whitespace() -> None:
+    # Given an ntfy block whose topic has surrounding whitespace
+    yaml_settings = _yaml_settings(ntfy={"topic": "  my-bins "})
+
+    # When the settings are loaded
+    settings = ApplicationSettings(yaml_settings)
+
+    # Then the topic is trimmed
+    assert settings.ntfy is not None
     assert settings.ntfy.topic == "my-bins"
 
 

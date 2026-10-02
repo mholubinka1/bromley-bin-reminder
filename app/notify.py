@@ -6,7 +6,7 @@ from smtplib import SMTP
 import requests
 from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import is_null_or_empty
+from common.settings import ApplicationSettings, is_null_or_empty
 from notification import NtfyNotification, WasteCollectionNotification
 
 logging.config.dictConfig(config)
@@ -79,8 +79,10 @@ class Notify:
         for notification in notifications:
             try:
                 self._publish_ntfy(self._ntfy_client, notification)
-            except requests.RequestException:
-                logger.error(f"Failed to send ntfy notification [{notification.title}]")
+            except Exception:
+                logger.exception(
+                    f"Failed to send ntfy notification [{notification.title}]"
+                )
             else:
                 logger.info(f"Sent ntfy notification [{notification.title}]")
 
@@ -101,3 +103,18 @@ class Notify:
         msg["To"] = recipients
         self._client.send_mail(sender, email_addresses, message=msg)
         logger.info(f"Sent notification e-mail to [{recipients}]")
+
+
+def build_notify(settings: ApplicationSettings) -> Notify:
+    smtp_client = SMTPClient(
+        username=settings.smtp.username,
+        password=settings.smtp.password,
+        server=settings.smtp.server,
+        port=settings.smtp.port,
+    )
+    ntfy_client = (
+        NtfyClient(server=settings.ntfy.server, topic=settings.ntfy.topic)
+        if settings.ntfy
+        else None
+    )
+    return Notify(email_client=smtp_client, ntfy_client=ntfy_client)

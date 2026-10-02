@@ -10,6 +10,13 @@ from collection import WasteCollection
 NIGHT_BEFORE_PRIORITY = 4
 WEEKLY_PRIORITY = 3
 GENERIC_EMOJI_TAG = "put_litter_in_its_place"
+SERVICE_NTFY_TAGS = {
+    "Mixed Recycling (Cans, Plastics & Glass)": "recycle",
+    "Paper & Cardboard": "newspaper",
+    "Garden Waste": "fallen_leaf",
+    "Non-Recyclable Refuse": "wastebasket",
+    "Food Waste": "banana",
+}
 
 
 @dataclass
@@ -33,9 +40,7 @@ def print_date(date: datetime) -> str:
 
 
 def emoji_tag(service_name: str) -> str:
-    return WasteCollectionNotification.service_emoji.get(
-        service_name, GENERIC_EMOJI_TAG
-    )
+    return SERVICE_NTFY_TAGS.get(service_name, GENERIC_EMOJI_TAG)
 
 
 def _build_ntfy_notification(
@@ -77,14 +82,6 @@ class WasteCollectionNotification:
         "Garden Waste": "#8B4513",
         "Non-Recyclable Refuse": "#000000",
         "Food Waste": "#d0a500",
-    }
-
-    service_emoji: ClassVar[dict[str, str]] = {
-        "Mixed Recycling (Cans, Plastics & Glass)": "recycle",
-        "Paper & Cardboard": "newspaper",
-        "Garden Waste": "fallen_leaf",
-        "Non-Recyclable Refuse": "wastebasket",
-        "Food Waste": "banana",
     }
 
     email: MIMEMultipart

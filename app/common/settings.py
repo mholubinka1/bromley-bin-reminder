@@ -46,10 +46,10 @@ class NtfySettings:
 def _build_ntfy_settings(ntfy_yaml: dict[str, Any] | None) -> NtfySettings | None:
     if not ntfy_yaml or is_null_or_empty(ntfy_yaml.get("topic")):
         return None
-    server: str = ntfy_yaml.get("server") or ""
+    server: str | None = ntfy_yaml.get("server")
     return NtfySettings(
-        server=DEFAULT_NTFY_SERVER if is_null_or_empty(server) else server,
-        topic=ntfy_yaml["topic"],
+        server=DEFAULT_NTFY_SERVER if is_null_or_empty(server) else str(server),
+        topic=ntfy_yaml["topic"].strip(),
     )
 
 

@@ -1,20 +1,6 @@
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 import pytest
-from collection import WasteCollection
 from notification import build_ntfy_notifications
-
-LONDON = ZoneInfo("Europe/London")
-
-
-def a_collection(service_name: str, day: int = 3) -> WasteCollection:
-    return WasteCollection(
-        service_name=service_name,
-        next_collection_date=datetime(2026, 10, day, tzinfo=LONDON),
-        is_tomorrow=True,
-        is_this_week=True,
-    )
+from support import a_collection
 
 
 def test_night_before_notification_prompts_putting_the_bin_out() -> None:

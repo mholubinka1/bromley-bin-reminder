@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import ApplicationSettings, ConfigLoader, validate_settings
-from notify import Notify, NtfyClient, SMTPClient
+from notify import Notify, build_notify
 from reload import ConfigChangePoller
 from reminder import send_reminders
 from schedule import every, repeat, run_pending
@@ -36,19 +36,8 @@ def main() -> None:
         validate_settings(settings)
         tz = ZoneInfo(settings.remind.tz)
         web_scraper = WasteworksScraper(settings.wasteworks_url, tz)
-        smtp_client = SMTPClient(
-            username=settings.smtp.username,
-            password=settings.smtp.password,
-            server=settings.smtp.server,
-            port=settings.smtp.port,
-        )
-        ntfy_client = (
-            NtfyClient(server=settings.ntfy.server, topic=settings.ntfy.topic)
-            if settings.ntfy
-            else None
-        )
-        logger.info(f"ntfy notifications {'enabled' if ntfy_client else 'disabled'}.")
-        notify = Notify(email_client=smtp_client, ntfy_client=ntfy_client)
+        logger.info(f"ntfy notifications {'enabled' if settings.ntfy else 'disabled'}.")
+        notify = build_notify(settings)
     except Exception:
         logger.exception("Could not load startup configuration.")
         sys.exit(1)

@@ -15,4 +15,4 @@ smtp:
 # Optional: also send push notifications via ntfy. Remove or leave commented to disable.
 # ntfy:
 #   server: https://ntfy.sh                             # optional, defaults to https://ntfy.sh
-#   topic: use-something-long-and-unguessable           # max 64 characters; anyone who knows a public topic name can read it
+#   topic: use-something-long-and-unguessable           # ntfy.sh limits topic names to 64 characters; anyone who knows a public topic name can read it

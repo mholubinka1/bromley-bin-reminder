@@ -51,17 +51,19 @@ maintainer's phone before implementation.
 ## Implementation Decisions
 
 - A new ntfy notification model (title, message, priority, tags) built from a list of
-  Waste Collections and a period (`tomorrow` / `week`). The Service-to-emoji mapping lives
-  beside the existing Service-to-colour mapping; an unknown Service gets a generic
+  Waste Collections and a period (`tomorrow` / `week`). The Service-to-ntfy-tag mapping is
+  a module-level constant; an unknown Service gets a generic
   fallback tag rather than raising, since the council can add Services.
 - A new ntfy client in the notify module that publishes a notification as JSON to the
   configured server (JSON publishing is used so non-ASCII titles are safe), wrapped in the
   existing `retry` decorator, with a request timeout. Uses the existing `requests`
-  dependency — no new runtime dependency.
+  dependency — no new runtime dependency. A `build_notify` factory in the same module
+  builds the `Notify` (SMTP client plus optional ntfy client) from settings.
 - `Notify` accepts an optional ntfy client and exposes a send for a list of
   notifications; one notification failing is logged and the rest are still attempted.
-- `ApplicationSettings` gains an optional ntfy block (server, topic). Validation treats a
-  blank topic as "ntfy disabled" and logs that; the topic is never logged.
+- `ApplicationSettings` gains an optional ntfy block (server, topic). A blank topic means
+  ntfy is disabled, `main` logs at startup whether ntfy is enabled, and the topic is
+  never logged.
 - A new reminder module owns "send this Reminder over every configured Channel", with
   per-channel error isolation. The daily and weekly jobs in `main` call it instead of
   calling `send_email` directly. Job scheduling and scraping logic are unchanged.
