@@ -15,9 +15,13 @@ def settings_with_ntfy(ntfy: dict[str, str] | None) -> ApplicationSettings:
     return ApplicationSettings(yaml_settings(ntfy=ntfy))
 
 
+def an_ntfy_configured_application() -> ApplicationSettings:
+    return settings_with_ntfy({"server": NTFY_SERVER, "topic": "a-topic"})
+
+
 def test_night_before_reminder_is_emailed_and_pushed_once_per_bin() -> None:
     # Given ntfy is configured and two bins are collected tomorrow
-    settings = settings_with_ntfy({"server": NTFY_SERVER, "topic": "a-topic"})
+    settings = an_ntfy_configured_application()
     collections = [
         a_collection("Food Waste", day=3),
         a_collection("Garden Waste", day=3),
@@ -43,7 +47,7 @@ def test_night_before_reminder_is_emailed_and_pushed_once_per_bin() -> None:
 
 def test_weekly_reminder_is_emailed_and_pushed_once_per_bin_in_order() -> None:
     # Given ntfy is configured and two bins are collected this week
-    settings = settings_with_ntfy({"server": NTFY_SERVER, "topic": "a-topic"})
+    settings = an_ntfy_configured_application()
     collections = [
         a_collection("Garden Waste", day=5),
         a_collection("Food Waste", day=7),
@@ -86,7 +90,7 @@ def test_reminder_without_ntfy_configured_only_sends_the_email() -> None:
 
 def test_reminder_is_still_pushed_when_the_email_cannot_be_sent() -> None:
     # Given ntfy is configured but the SMTP server is failing
-    settings = settings_with_ntfy({"server": NTFY_SERVER, "topic": "a-topic"})
+    settings = an_ntfy_configured_application()
     collections = [
         a_collection("Food Waste", day=3),
         a_collection("Garden Waste", day=3),
@@ -111,7 +115,7 @@ def test_reminder_is_still_pushed_when_the_email_cannot_be_sent() -> None:
 
 def test_reminder_is_still_emailed_when_ntfy_cannot_be_reached() -> None:
     # Given ntfy is configured but the server is unreachable
-    settings = settings_with_ntfy({"server": NTFY_SERVER, "topic": "a-topic"})
+    settings = an_ntfy_configured_application()
     collections = [
         a_collection("Food Waste", day=3),
         a_collection("Garden Waste", day=3),
