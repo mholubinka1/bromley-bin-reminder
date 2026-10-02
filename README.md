@@ -14,3 +14,8 @@ Note: Garden Waste is an [optional paid service](https://www.bromley.gov.uk/hous
 
 ## E-Mail Setup
 
+## ntfy Setup
+
+Push notifications through [ntfy](https://ntfy.sh) are optional. Add an `ntfy` block to the config file (see `config/config.yml.template`) with a `topic` and, if you self-host, a `server` (defaults to `https://ntfy.sh`). Topics on ntfy.sh must be 64 characters or fewer, and anyone who knows a public topic name can read it, so choose something unguessable.
+
+Each bin gets its own notification, with an emoji for the bin type. The reminder the night before is sent as high priority, and the weekly reminder as default priority. E-mail reminders are unaffected and are sent as before.

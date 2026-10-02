@@ -8,9 +8,9 @@ from zoneinfo import ZoneInfo
 
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import ApplicationSettings, ConfigLoader, validate_settings
-from notification import WasteCollectionNotification
-from notify import Notify, SMTPClient
+from notify import Notify, NtfyClient, SMTPClient
 from reload import ConfigChangePoller
+from reminder import send_reminders
 from schedule import every, repeat, run_pending
 from scraper import WasteworksScraper
 
@@ -42,7 +42,13 @@ def main() -> None:
             server=settings.smtp.server,
             port=settings.smtp.port,
         )
-        notify = Notify(email_client=smtp_client)
+        ntfy_client = (
+            NtfyClient(server=settings.ntfy.server, topic=settings.ntfy.topic)
+            if settings.ntfy
+            else None
+        )
+        logger.info(f"ntfy notifications {'enabled' if ntfy_client else 'disabled'}.")
+        notify = Notify(email_client=smtp_client, ntfy_client=ntfy_client)
     except Exception:
         logger.exception("Could not load startup configuration.")
         sys.exit(1)
@@ -83,11 +89,8 @@ def main() -> None:
                 services = ", ".join([c.service_name for c in upcoming_collections])
                 logger.info(f"Upcoming collections: [{services}]")
                 logger.info("Sending notifications about tomorrow's collections.")
-                notification = WasteCollectionNotification(
-                    upcoming_collections, tz, period="tomorrow"
-                )
-                notify.send_email(
-                    notification, settings.smtp.username, settings.remind.target_emails
+                send_reminders(
+                    notify, settings, upcoming_collections, tz, period="tomorrow"
                 )
         except Exception:
             logger.exception("Daily scrape and alert job failed.")
@@ -116,11 +119,8 @@ def main() -> None:
                 services = ", ".join([c.service_name for c in this_week_collections])
                 logger.info(f"Collections this week: [{services}]")
                 logger.info("Sending notifications about this week's collections.")
-                notification = WasteCollectionNotification(
-                    this_week_collections, tz, period="week"
-                )
-                notify.send_email(
-                    notification, settings.smtp.username, settings.remind.target_emails
+                send_reminders(
+                    notify, settings, this_week_collections, tz, period="week"
                 )
         except Exception:
             logger.exception("Weekly scrape and alert job failed.")
