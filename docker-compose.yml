@@ -7,6 +7,7 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     volumes:
       - /mnt/media/pi-media/containers/bin-reminder/config:/config
+      - /mnt/media/pi-media/containers/bin-reminder/logs:/logs
     restart: unless-stopped
 
 #docker-compose up --pull=always -d

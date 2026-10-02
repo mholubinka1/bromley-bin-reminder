@@ -15,8 +15,9 @@ RUN tar -xzvf geckodriver-v0.33.0-linux-aarch64.tar.gz -C /usr/local/bin
 RUN chmod +x /usr/local/bin/geckodriver
 
 WORKDIR /app
-RUN mkdir -p config
+RUN mkdir -p config /logs && chown sel_user /logs
 VOLUME /config
+VOLUME /logs
 
 COPY pyproject.toml uv.lock ./
 
