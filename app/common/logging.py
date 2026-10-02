@@ -21,16 +21,17 @@ def build_config(log_dir: str) -> dict[str, Any]:
             "level": LOG_LEVEL,
         },
     }
-    if not _is_writable_dir(log_dir):
+    log_file = Path(log_dir) / LOG_FILE_NAME
+    if not _can_write_log_file(log_file):
         print(
-            f"Log directory [{log_dir}] is not writable; logging to console only.",
+            f"Cannot write log file [{log_file}]; logging to console only.",
             file=sys.stderr,
         )
     else:
         handlers["file"] = {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "standard",
-            "filename": str(Path(log_dir) / LOG_FILE_NAME),
+            "filename": str(log_file),
             "maxBytes": LOG_MAX_BYTES,
             "backupCount": LOG_BACKUP_COUNT,
             "encoding": "utf-8",
@@ -57,8 +58,12 @@ def build_config(log_dir: str) -> dict[str, Any]:
     }
 
 
-def _is_writable_dir(path: str) -> bool:
-    return os.path.isdir(path) and os.access(path, os.W_OK)
+def _can_write_log_file(log_file: Path) -> bool:
+    try:
+        with open(log_file, "a", encoding="utf-8"):
+            return True
+    except OSError:
+        return False
 
 
 config = build_config(os.environ.get(LOG_DIR_ENV, DEFAULT_LOG_DIR))

@@ -1,5 +1,4 @@
 import logging.config
-import os
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -70,17 +69,16 @@ def test_console_only_when_the_log_directory_is_missing(tmp_path: Path) -> None:
     assert not missing.exists()
 
 
-def test_console_only_when_the_log_directory_is_not_writable(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # Given a log directory the process cannot write to
-    monkeypatch.setattr(os, "access", lambda path, mode: False)
+def test_console_only_when_the_log_file_cannot_be_opened(tmp_path: Path) -> None:
+    # Given a log directory where the log file path cannot be opened for writing
+    (tmp_path / LOG_FILE_NAME).mkdir()
 
     # When the logging config is built
     config = build_config(str(tmp_path))
 
     # Then only the console handler is configured
     assert "file" not in config["handlers"]
+    assert config["loggers"][APP_LOGGER_NAME]["handlers"] == ["console"]
 
 
 def test_a_warning_is_printed_when_file_logging_is_skipped(
