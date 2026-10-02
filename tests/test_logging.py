@@ -1,7 +1,21 @@
 import logging.config
+import os
+from collections.abc import Iterator
 from pathlib import Path
 
+import pytest
 from common.logging import APP_LOGGER_NAME, LOG_FILE_NAME, build_config
+
+
+@pytest.fixture
+def restore_app_logger() -> Iterator[None]:
+    logger = logging.getLogger(APP_LOGGER_NAME)
+    original = list(logger.handlers)
+    yield
+    for handler in logger.handlers:
+        if handler not in original:
+            handler.close()
+    logger.handlers = original
 
 
 def test_file_handler_writes_to_the_log_directory_alongside_the_console(
@@ -28,7 +42,9 @@ def test_file_handler_rotates_with_bounded_size_and_backups(tmp_path: Path) -> N
     assert handler["backupCount"] > 0
 
 
-def test_messages_are_written_to_the_log_file(tmp_path: Path) -> None:
+def test_messages_are_written_to_the_log_file(
+    tmp_path: Path, restore_app_logger: None
+) -> None:
     # Given logging configured against a writable directory
     logging.config.dictConfig(build_config(str(tmp_path)))
 
@@ -54,14 +70,27 @@ def test_console_only_when_the_log_directory_is_missing(tmp_path: Path) -> None:
     assert not missing.exists()
 
 
-def test_console_only_when_the_log_directory_is_not_writable(tmp_path: Path) -> None:
-    # Given a read-only log directory
-    tmp_path.chmod(0o500)
-    try:
-        # When the logging config is built
-        config = build_config(str(tmp_path))
-    finally:
-        tmp_path.chmod(0o700)
+def test_console_only_when_the_log_directory_is_not_writable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Given a log directory the process cannot write to
+    monkeypatch.setattr(os, "access", lambda path, mode: False)
+
+    # When the logging config is built
+    config = build_config(str(tmp_path))
 
     # Then only the console handler is configured
     assert "file" not in config["handlers"]
+
+
+def test_a_warning_is_printed_when_file_logging_is_skipped(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Given a log directory that does not exist
+    missing = tmp_path / "nope"
+
+    # When the logging config is built
+    build_config(str(missing))
+
+    # Then the reason is reported on stderr
+    assert str(missing) in capsys.readouterr().err

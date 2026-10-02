@@ -12,6 +12,10 @@ Note: Garden Waste is an [optional paid service](https://www.bromley.gov.uk/hous
 
 ## Application Setup
 
+### Logging
+
+Logs are written to stdout and to a rotating file, `bin-reminder.log` (5 MB per file, 5 backups), in the directory named by the `LOG_DIR` environment variable (default `/logs`). Mount a host directory there to keep the logs, for example `/mnt/media/pi-media/containers/bin-reminder/logs:/logs` in `docker-compose.yml`. The directory must be writable by the container user (`sel_user`); if it is missing or not writable, the app logs to stdout only and prints a warning to stderr.
+
 ## E-Mail Setup
 
 ## ntfy Setup

@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -15,15 +16,20 @@ def build_config(log_dir: str) -> dict[str, Any]:
     handlers: dict[str, Any] = {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "std_out",
+            "formatter": "standard",
             "stream": "ext://sys.stdout",
             "level": LOG_LEVEL,
         },
     }
-    if _is_writable_dir(log_dir):
+    if not _is_writable_dir(log_dir):
+        print(
+            f"Log directory [{log_dir}] is not writable; logging to console only.",
+            file=sys.stderr,
+        )
+    else:
         handlers["file"] = {
             "class": "logging.handlers.RotatingFileHandler",
-            "formatter": "std_out",
+            "formatter": "standard",
             "filename": str(Path(log_dir) / LOG_FILE_NAME),
             "maxBytes": LOG_MAX_BYTES,
             "backupCount": LOG_BACKUP_COUNT,
@@ -36,7 +42,7 @@ def build_config(log_dir: str) -> dict[str, Any]:
         "disable_existing_loggers": False,
         "handlers": handlers,
         "formatters": {
-            "std_out": {
+            "standard": {
                 "format": "%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
