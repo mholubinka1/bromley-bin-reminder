@@ -1,5 +1,7 @@
 # Issues: feature/rotating-log-file
 
+> Work complete — PR ready to merge.
+
 ## Write logs to a rotating file on a mounted volume
 
 **Blocked by**: None
