@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -5,6 +6,68 @@ from typing import ClassVar
 from zoneinfo import ZoneInfo
 
 from collection import WasteCollection
+
+NIGHT_BEFORE_PRIORITY = 4
+WEEKLY_PRIORITY = 3
+GENERIC_EMOJI_TAG = "put_litter_in_its_place"
+
+
+@dataclass
+class NtfyNotification:
+    title: str
+    message: str
+    priority: int
+    tags: list[str]
+
+
+def print_date(date: datetime) -> str:
+    day = date.day
+    day_suffix = "th"
+    if day in [1, 21, 31]:
+        day_suffix = "st"
+    elif day in [2, 22]:
+        day_suffix = "nd"
+    elif day in [3, 23]:
+        day_suffix = "rd"
+    return date.strftime(f"%A {day}{day_suffix} %B")
+
+
+def emoji_tag(service_name: str) -> str:
+    return WasteCollectionNotification.service_emoji.get(
+        service_name, GENERIC_EMOJI_TAG
+    )
+
+
+def _build_ntfy_notification(
+    collection: WasteCollection, period: str
+) -> NtfyNotification:
+    tags = [emoji_tag(collection.service_name)]
+    match period:
+        case "tomorrow":
+            return NtfyNotification(
+                title=f"{collection.service_name}: tomorrow",
+                message="Put it out tonight.",
+                priority=NIGHT_BEFORE_PRIORITY,
+                tags=tags,
+            )
+        case "week":
+            return NtfyNotification(
+                title=f"{collection.service_name}: this week",
+                message=f"Collection is {print_date(collection.next_collection_date)}.",
+                priority=WEEKLY_PRIORITY,
+                tags=tags,
+            )
+        case _:
+            raise NotImplementedError(period)
+
+
+def build_ntfy_notifications(
+    upcoming_collections: list[WasteCollection], period: str
+) -> list[NtfyNotification]:
+    return [
+        _build_ntfy_notification(collection, period)
+        for collection in upcoming_collections
+    ]
 
 
 class WasteCollectionNotification:
@@ -14,6 +77,14 @@ class WasteCollectionNotification:
         "Garden Waste": "#8B4513",
         "Non-Recyclable Refuse": "#000000",
         "Food Waste": "#d0a500",
+    }
+
+    service_emoji: ClassVar[dict[str, str]] = {
+        "Mixed Recycling (Cans, Plastics & Glass)": "recycle",
+        "Paper & Cardboard": "newspaper",
+        "Garden Waste": "fallen_leaf",
+        "Non-Recyclable Refuse": "wastebasket",
+        "Food Waste": "banana",
     }
 
     email: MIMEMultipart
@@ -27,20 +98,9 @@ class WasteCollectionNotification:
         self._tz = tz
         self.email = self._create_email(upcoming_collections, period)
 
-    def _print_date(self, date: datetime) -> str:
-        day = date.day
-        day_suffix = "th"
-        if day in [1, 21, 31]:
-            day_suffix = "st"
-        elif day in [2, 22]:
-            day_suffix = "nd"
-        elif day in [3, 23]:
-            day_suffix = "rd"
-        return date.strftime(f"%A {day}{day_suffix} %B")
-
     def _tomorrow(self) -> str:
         tomorrow = datetime.now(self._tz) + timedelta(days=1)
-        return self._print_date(tomorrow)
+        return print_date(tomorrow)
 
     def _build_tomorrow_html_body(
         self, upcoming_collections: list[WasteCollection]
@@ -123,9 +183,9 @@ class WasteCollectionNotification:
                 <td style="width: 80px;">
                     <div style="width: 80px; height: 30px; background-color: {self.service_colours[collection.service_name]};"></div>
                 </td>
-                <td>{self._print_date(collection.next_collection_date)}
+                <td>{print_date(collection.next_collection_date)}
             </tr>""" for collection in upcoming_collections)
-        week_commencing = self._print_date(datetime.now(self._tz))
+        week_commencing = print_date(datetime.now(self._tz))
         html_body = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -211,6 +271,3 @@ class WasteCollectionNotification:
                 return msg
             case _:
                 raise NotImplementedError(period)
-
-    def _create_push(self, upcoming_collections: list[WasteCollection]) -> None:
-        pass
