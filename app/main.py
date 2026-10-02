@@ -42,16 +42,9 @@ def main() -> None:
         logger.exception("Could not load startup configuration.")
         sys.exit(1)
 
-    # Keep in step with the Dockerfile CMD — both launch the app the same way.
-    command = [
-        "uv",
-        "run",
-        "--no-sync",
-        "python",
-        "./app/main.py",
-        "--config-file",
-        config_file,
-    ]
+    # Re-exec the interpreter directly: re-running the `uv run` launcher would stack
+    # another waiting uv parent process on every reload.
+    command = [sys.executable, *sys.argv]
     poller = ConfigChangePoller(path=config_file, command=command)
     polling_thread = Thread(target=poller.poll, daemon=True)
     polling_thread.start()
