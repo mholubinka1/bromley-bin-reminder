@@ -26,7 +26,7 @@ Remove the unused `_create_push` stub.
       supplied.
 - [x] Each of the five Services maps to its confirmed emoji; no colour tags are used.
 - [x] An unknown Service yields a notification with a generic tag instead of an error.
-- [x] An empty list yields no notifications; an unknown period raises.
+- [x] An empty list yields no notifications; an unknown period raises. (Since resolved by chore/reminder-period: the reminder period is now a closed `Period` type, so an unknown period can no longer be expressed.)
 - [x] `uv run pytest` passes.
 
 ---
