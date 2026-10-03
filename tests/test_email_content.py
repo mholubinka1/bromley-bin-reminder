@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from common.settings import ApplicationSettings
 from notify import build_notify
+from period import Period
 from reminder import send_reminders
 from support import FRIDAY_EVENING, a_collection, sent_email, yaml_settings
 
@@ -20,7 +21,7 @@ def test_night_before_email_lists_each_bin_with_its_colour_under_tomorrows_date(
             settings,
             collections,
             now=FRIDAY_EVENING,
-            period="tomorrow",
+            period=Period.TOMORROW,
         )
 
     # Then the email is high priority and lists the bin and its colour under tomorrow's date
@@ -49,7 +50,7 @@ def test_weekly_email_lists_each_bin_with_its_colour_and_collection_date() -> No
             settings,
             collections,
             now=FRIDAY_EVENING,
-            period="week",
+            period=Period.WEEK,
         )
 
     # Then the email is headed with the week commencing date and lists each bin, colour and date

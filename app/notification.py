@@ -4,10 +4,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import ClassVar
 
-from collection import WasteCollection
+from collection import WasteCollection, print_date
+from period import Period
 
-NIGHT_BEFORE_PRIORITY = 4
-WEEKLY_PRIORITY = 3
 GENERIC_EMOJI_TAG = "put_litter_in_its_place"
 SERVICE_NTFY_TAGS = {
     "Mixed Recycling (Cans, Plastics & Glass)": "recycle",
@@ -26,47 +25,23 @@ class NtfyNotification:
     tags: list[str]
 
 
-def print_date(date: datetime) -> str:
-    day = date.day
-    day_suffix = "th"
-    if day in [1, 21, 31]:
-        day_suffix = "st"
-    elif day in [2, 22]:
-        day_suffix = "nd"
-    elif day in [3, 23]:
-        day_suffix = "rd"
-    return date.strftime(f"%A {day}{day_suffix} %B")
-
-
 def emoji_tag(service_name: str) -> str:
     return SERVICE_NTFY_TAGS.get(service_name, GENERIC_EMOJI_TAG)
 
 
 def _build_ntfy_notification(
-    collection: WasteCollection, period: str
+    collection: WasteCollection, period: Period
 ) -> NtfyNotification:
-    tags = [emoji_tag(collection.service_name)]
-    match period:
-        case "tomorrow":
-            return NtfyNotification(
-                title=f"{collection.service_name}: tomorrow",
-                message="Put it out tonight.",
-                priority=NIGHT_BEFORE_PRIORITY,
-                tags=tags,
-            )
-        case "week":
-            return NtfyNotification(
-                title=f"{collection.service_name}: this week",
-                message=f"Collection is {print_date(collection.next_collection_date)}.",
-                priority=WEEKLY_PRIORITY,
-                tags=tags,
-            )
-        case _:
-            raise NotImplementedError(period)
+    return NtfyNotification(
+        title=f"{collection.service_name}: {period.ntfy_title_suffix}",
+        message=period.ntfy_message(collection),
+        priority=period.ntfy_priority,
+        tags=[emoji_tag(collection.service_name)],
+    )
 
 
 def build_ntfy_notifications(
-    upcoming_collections: list[WasteCollection], period: str
+    upcoming_collections: list[WasteCollection], period: Period
 ) -> list[NtfyNotification]:
     return [
         _build_ntfy_notification(collection, period)

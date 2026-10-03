@@ -1,5 +1,6 @@
 import pytest
 from notification import build_ntfy_notifications
+from period import Period
 from support import a_collection
 
 
@@ -8,7 +9,7 @@ def test_night_before_notification_prompts_putting_the_bin_out() -> None:
     collections = [a_collection("Food Waste")]
 
     # When the night-before notifications are built
-    notifications = build_ntfy_notifications(collections, period="tomorrow")
+    notifications = build_ntfy_notifications(collections, period=Period.TOMORROW)
 
     # Then there is one high priority notification tagged with the banana emoji
     assert len(notifications) == 1
@@ -26,7 +27,7 @@ def test_weekly_notifications_announce_each_service_with_its_collection_date() -
     ]
 
     # When the weekly notifications are built
-    notifications = build_ntfy_notifications(collections, period="week")
+    notifications = build_ntfy_notifications(collections, period=Period.WEEK)
 
     # Then there is one default priority notification per service, in order
     assert [n.title for n in notifications] == [
@@ -57,7 +58,7 @@ def test_each_service_is_tagged_with_its_own_emoji(
     collections = [a_collection(service_name)]
 
     # When the notifications are built
-    notifications = build_ntfy_notifications(collections, period="week")
+    notifications = build_ntfy_notifications(collections, period=Period.WEEK)
 
     # Then the notification carries only that service's emoji
     assert notifications[0].tags == [emoji]
@@ -68,7 +69,7 @@ def test_unrecognised_service_gets_a_generic_litter_tag() -> None:
     collections = [a_collection("Bulky Waste")]
 
     # When the notifications are built
-    notifications = build_ntfy_notifications(collections, period="week")
+    notifications = build_ntfy_notifications(collections, period=Period.WEEK)
 
     # Then the notification is tagged with the generic litter emoji
     assert notifications[0].tags == ["put_litter_in_its_place"]
@@ -77,17 +78,7 @@ def test_unrecognised_service_gets_a_generic_litter_tag() -> None:
 def test_no_collections_means_no_notifications() -> None:
     # Given nothing is being collected
     # When the notifications are built
-    notifications = build_ntfy_notifications([], period="week")
+    notifications = build_ntfy_notifications([], period=Period.WEEK)
 
     # Then there are none
     assert notifications == []
-
-
-def test_unknown_period_is_not_supported() -> None:
-    # Given a collection
-    collections = [a_collection("Food Waste")]
-
-    # When notifications are built for an unknown period
-    # Then it is rejected
-    with pytest.raises(NotImplementedError):
-        build_ntfy_notifications(collections, period="fortnight")
