@@ -2,6 +2,7 @@ import email
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from email.message import Message
 from html.parser import HTMLParser
 from typing import Any
 from unittest.mock import MagicMock
@@ -103,13 +104,17 @@ class _EmailHtmlReader(HTMLParser):
             self.rows[-1].append(text)
 
 
+def _sent_message(smtp: MagicMock) -> Message:
+    return email.message_from_string(smtp.return_value.sendmail.call_args.args[2])
+
+
 def sent_email_html(smtp: MagicMock) -> str:
-    message = email.message_from_string(smtp.return_value.sendmail.call_args.args[2])
-    return message.get_payload(0).get_payload(decode=True).decode()  # type: ignore[union-attr]
+    html_part = _sent_message(smtp).get_payload(0)
+    return html_part.get_payload(decode=True).decode()  # type: ignore[union-attr]
 
 
 def sent_email(smtp: MagicMock) -> SentEmail:
-    message = email.message_from_string(smtp.return_value.sendmail.call_args.args[2])
+    message = _sent_message(smtp)
     reader = _EmailHtmlReader()
     reader.feed(sent_email_html(smtp))
     return SentEmail(

@@ -1,5 +1,6 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from collection import WasteCollection
 from common.settings import ApplicationSettings
 from notify import build_notify
 from period import Period
@@ -13,22 +14,29 @@ from support import (
 )
 
 
-def test_night_before_email_lists_each_bin_with_its_colour_under_tomorrows_date() -> (
-    None
-):
-    # Given food waste is collected tomorrow, Saturday 3rd October
+def send_email_reminder(
+    period: Period, collections: list[WasteCollection]
+) -> MagicMock:
     settings = ApplicationSettings(yaml_settings())
-    collections = [a_collection("Food Waste", day=3)]
-
-    # When the night-before reminder is sent on Friday evening
     with patch("notify.SMTP") as smtp:
         send_reminders(
             build_notify(settings),
             settings,
             collections,
             now=FRIDAY_EVENING,
-            period=Period.TOMORROW,
+            period=period,
         )
+    return smtp
+
+
+def test_night_before_email_lists_each_bin_with_its_colour_under_tomorrows_date() -> (
+    None
+):
+    # Given food waste is collected tomorrow, Saturday 3rd October
+    collections = [a_collection("Food Waste", day=3)]
+
+    # When the night-before reminder is sent on Friday evening
+    smtp = send_email_reminder(Period.TOMORROW, collections)
 
     # Then the email is high priority and lists the bin and its colour under tomorrow's date
     email = sent_email(smtp)
@@ -43,21 +51,13 @@ def test_night_before_email_lists_each_bin_with_its_colour_under_tomorrows_date(
 
 def test_weekly_email_lists_each_bin_with_its_colour_and_collection_date() -> None:
     # Given food waste and garden waste are collected this week
-    settings = ApplicationSettings(yaml_settings())
     collections = [
         a_collection("Food Waste", day=6),
         a_collection("Garden Waste", day=8),
     ]
 
     # When the weekly reminder is sent on Friday evening
-    with patch("notify.SMTP") as smtp:
-        send_reminders(
-            build_notify(settings),
-            settings,
-            collections,
-            now=FRIDAY_EVENING,
-            period=Period.WEEK,
-        )
+    smtp = send_email_reminder(Period.WEEK, collections)
 
     # Then the email is headed with the week commencing date and lists each bin, colour and date
     email = sent_email(smtp)
@@ -73,18 +73,10 @@ def test_weekly_email_lists_each_bin_with_its_colour_and_collection_date() -> No
 
 def test_weekly_email_closes_every_table_cell_it_opens() -> None:
     # Given food waste is collected this week
-    settings = ApplicationSettings(yaml_settings())
     collections = [a_collection("Food Waste", day=6)]
 
     # When the weekly reminder is sent
-    with patch("notify.SMTP") as smtp:
-        send_reminders(
-            build_notify(settings),
-            settings,
-            collections,
-            now=FRIDAY_EVENING,
-            period=Period.WEEK,
-        )
+    smtp = send_email_reminder(Period.WEEK, collections)
 
     # Then every table cell in the email is closed
     html = sent_email_html(smtp)

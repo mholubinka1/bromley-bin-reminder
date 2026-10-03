@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import Enum, unique
 
 from collection import WasteCollection, print_date
 
@@ -17,6 +17,7 @@ class PeriodDetails:
     shows_collection_dates: bool
 
 
+@unique
 class Period(Enum):
     TOMORROW = PeriodDetails(
         ntfy_title_suffix="tomorrow",
