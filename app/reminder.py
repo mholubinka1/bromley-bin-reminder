@@ -20,15 +20,11 @@ def send_reminders(
     now: datetime,
     period: Period,
 ) -> None:
-    # The email builder still takes the period as a string; removed once it takes a Period.
-    email_period = period.name.lower()
     try:
-        notification = WasteCollectionNotification(
-            collections, now, period=email_period
-        )
+        notification = WasteCollectionNotification(collections, now, period)
         notify.send_email(
             notification, settings.smtp.username, settings.remind.target_emails
         )
     except Exception:
-        logger.exception(f"Failed to send {email_period} email reminder.")
+        logger.exception(f"Failed to send {period.name.lower()} email reminder.")
     notify.send_ntfy(build_ntfy_notifications(collections, period))

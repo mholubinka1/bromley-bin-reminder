@@ -103,12 +103,15 @@ class _EmailHtmlReader(HTMLParser):
             self.rows[-1].append(text)
 
 
+def sent_email_html(smtp: MagicMock) -> str:
+    message = email.message_from_string(smtp.return_value.sendmail.call_args.args[2])
+    return message.get_payload(0).get_payload(decode=True).decode()  # type: ignore[union-attr]
+
+
 def sent_email(smtp: MagicMock) -> SentEmail:
-    raw_message = smtp.return_value.sendmail.call_args.args[2]
-    message = email.message_from_string(raw_message)
-    html_part = message.get_payload(0).get_payload(decode=True).decode()  # type: ignore[union-attr]
+    message = email.message_from_string(smtp.return_value.sendmail.call_args.args[2])
     reader = _EmailHtmlReader()
-    reader.feed(html_part)
+    reader.feed(sent_email_html(smtp))
     return SentEmail(
         subject=message["Subject"],
         x_priority=message["X-Priority"],
