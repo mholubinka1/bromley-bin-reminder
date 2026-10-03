@@ -86,15 +86,21 @@ def test_weekly_email_closes_every_table_cell_it_opens() -> None:
     assert html.count("<td") == html.count("</td>")
 
 
-@pytest.mark.parametrize("period", list(Period))
-def test_email_for_a_period_with_no_collections_has_a_header_and_no_rows(
-    period: Period,
+@pytest.mark.parametrize(
+    ("period", "expected_header_cells"),
+    [
+        (Period.TOMORROW, ["Bin Type"]),
+        (Period.WEEK, ["Bin Type", "Collection Date"]),
+    ],
+)
+def test_email_for_a_period_with_no_collections_has_its_headers_and_no_rows(
+    period: Period, expected_header_cells: list[str]
 ) -> None:
     # Given there are no collections
     # When the reminder is sent
     smtp = send_email_reminder(period, [])
 
-    # Then the email still has its table header and no rows
+    # Then the email still has the period's table headers and no rows
     email = sent_email(smtp)
-    assert email.header_cells[0] == "Bin Type"
+    assert email.header_cells == expected_header_cells
     assert email.rows == []

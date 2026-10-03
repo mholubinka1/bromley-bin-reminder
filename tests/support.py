@@ -74,17 +74,17 @@ class _EmailHtmlReader(HTMLParser):
         self.header_cells: list[str] = []
         self.rows: list[list[str]] = []
         self._open_tag: str | None = None
-        self._in_body_row = False
+        self._in_row = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self._open_tag = tag
         if tag == "tr":
-            self._in_body_row = True
+            self._in_row = True
             self.rows.append([])
         if tag == "div":
             style = dict(attrs).get("style") or ""
             colour = re.search(r"background-color:\s*(#\w+)", style)
-            if colour and self._in_body_row:
+            if colour and self._in_row:
                 self.rows[-1].append(colour.group(1))
 
     def handle_endtag(self, tag: str) -> None:
@@ -100,7 +100,7 @@ class _EmailHtmlReader(HTMLParser):
             self.heading += text
         elif self._open_tag == "th":
             self.header_cells.append(text)
-        elif self._open_tag == "td" and self._in_body_row:
+        elif self._open_tag == "td" and self._in_row:
             self.rows[-1].append(text)
 
 
