@@ -60,8 +60,9 @@ ntfy titles, messages, priorities and tags are identical to today.
   unclosed `<td>` in today's weekly rows is closed; browsers already auto-close it.
   Whitespace and indentation of the generated HTML may differ.
 - The clock is injected: the email builder takes `now: datetime` in place of `tz`.
-  `send_reminders` computes `datetime.now(tz)` once and passes it down. Its signature
-  otherwise changes only in that `period` is a `Period` rather than a `str`.
+  `send_reminders` takes `now` in place of `tz` and passes it down, so tests can inject a
+  fixed clock at that seam; the scheduled jobs in `main.py` pass `datetime.now(tz)`. Its
+  signature otherwise changes only in that `period` is a `Period` rather than a `str`.
 - The scheduled jobs in `main.py` replace their inline filtering and sorting with
   `Period.select(...)` and pass `Period.TOMORROW` / `Period.WEEK` to `send_reminders`. The
   job bodies are otherwise left as they are.

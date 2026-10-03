@@ -10,7 +10,7 @@
 
 ### What to build
 
-Make the clock injectable (`WasteCollectionNotification` takes `now`; `send_reminders` computes it) and add characterisation tests through `send_reminders` that pass on the current code.
+Make the clock injectable (`WasteCollectionNotification` takes `now`; `send_reminders` takes it in place of `tz`; the scheduled jobs pass `datetime.now(tz)`) and add characterisation tests through `send_reminders` that pass on the current code.
 
 ### Acceptance criteria
 

@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
 from collection import WasteCollection
 from common.settings import ApplicationSettings
 from notify import build_notify
@@ -62,6 +63,8 @@ def test_weekly_email_lists_each_bin_with_its_colour_and_collection_date() -> No
     # Then the email is headed with the week commencing date and lists each bin, colour and date
     email = sent_email(smtp)
     assert email.subject == "Weekly Collections"
+    assert email.x_priority == "1"
+    assert email.importance == "high"
     assert email.title == "Week Commencing: Friday 2nd October - Bin Collections"
     assert email.heading == "Week Commencing: Friday 2nd October"
     assert email.header_cells == ["Bin Type", "Collection Date"]
@@ -81,3 +84,17 @@ def test_weekly_email_closes_every_table_cell_it_opens() -> None:
     # Then every table cell in the email is closed
     html = sent_email_html(smtp)
     assert html.count("<td") == html.count("</td>")
+
+
+@pytest.mark.parametrize("period", list(Period))
+def test_email_for_a_period_with_no_collections_has_a_header_and_no_rows(
+    period: Period,
+) -> None:
+    # Given there are no collections
+    # When the reminder is sent
+    smtp = send_email_reminder(period, [])
+
+    # Then the email still has its table header and no rows
+    email = sent_email(smtp)
+    assert email.header_cells[0] == "Bin Type"
+    assert email.rows == []
