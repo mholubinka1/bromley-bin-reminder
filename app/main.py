@@ -2,6 +2,7 @@ import logging.config
 import sys
 import time
 from argparse import ArgumentParser, Namespace
+from datetime import datetime
 from logging import Logger, getLogger
 from threading import Thread
 from zoneinfo import ZoneInfo
@@ -72,7 +73,11 @@ def main() -> None:
                 logger.info(f"Upcoming collections: [{services}]")
                 logger.info("Sending notifications about tomorrow's collections.")
                 send_reminders(
-                    notify, settings, upcoming_collections, tz, period="tomorrow"
+                    notify,
+                    settings,
+                    upcoming_collections,
+                    datetime.now(tz),
+                    period="tomorrow",
                 )
         except Exception:
             logger.exception("Daily scrape and alert job failed.")
@@ -102,7 +107,11 @@ def main() -> None:
                 logger.info(f"Collections this week: [{services}]")
                 logger.info("Sending notifications about this week's collections.")
                 send_reminders(
-                    notify, settings, this_week_collections, tz, period="week"
+                    notify,
+                    settings,
+                    this_week_collections,
+                    datetime.now(tz),
+                    period="week",
                 )
         except Exception:
             logger.exception("Weekly scrape and alert job failed.")

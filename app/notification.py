@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import ClassVar
-from zoneinfo import ZoneInfo
 
 from collection import WasteCollection
 
@@ -89,14 +88,14 @@ class WasteCollectionNotification:
     def __init__(
         self,
         upcoming_collections: list[WasteCollection],
-        tz: ZoneInfo,
+        now: datetime,
         period: str = "tomorrow",
     ) -> None:
-        self._tz = tz
+        self._now = now
         self.email = self._create_email(upcoming_collections, period)
 
     def _tomorrow(self) -> str:
-        tomorrow = datetime.now(self._tz) + timedelta(days=1)
+        tomorrow = self._now + timedelta(days=1)
         return print_date(tomorrow)
 
     def _build_tomorrow_html_body(
@@ -182,7 +181,7 @@ class WasteCollectionNotification:
                 </td>
                 <td>{print_date(collection.next_collection_date)}
             </tr>""" for collection in upcoming_collections)
-        week_commencing = print_date(datetime.now(self._tz))
+        week_commencing = print_date(self._now)
         html_body = f"""
         <!DOCTYPE html>
         <html lang="en">

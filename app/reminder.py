@@ -1,6 +1,6 @@
 import logging.config
+from datetime import datetime
 from logging import Logger, getLogger
-from zoneinfo import ZoneInfo
 
 from collection import WasteCollection
 from common.logging import APP_LOGGER_NAME, config
@@ -16,11 +16,11 @@ def send_reminders(
     notify: Notify,
     settings: ApplicationSettings,
     collections: list[WasteCollection],
-    tz: ZoneInfo,
+    now: datetime,
     period: str,
 ) -> None:
     try:
-        notification = WasteCollectionNotification(collections, tz, period=period)
+        notification = WasteCollectionNotification(collections, now, period=period)
         notify.send_email(
             notification, settings.smtp.username, settings.remind.target_emails
         )

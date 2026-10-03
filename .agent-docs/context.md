@@ -20,6 +20,10 @@ _Avoid_: waste type, bin type, category
 The scheduled message sent for collections that are tomorrow (nightly) or within the current reminder window (weekly, Sundays). Delivered over each configured Channel. Triggered by the scheduled run comparing scraped collections against the current date.
 _Avoid_: alert
 
+**Period**:
+The span a Reminder covers: Tomorrow (the nightly Reminder) or Week (the weekly Reminder, sent on Sundays). A Period decides which Waste Collections a Reminder includes and how that Reminder is worded.
+_Avoid_: schedule, frequency, mode
+
 **Channel**:
 A delivery route for Reminders: email (SMTP) or ntfy. Email is always configured; ntfy is optional. Channels are independent — one failing does not block the other.
 _Avoid_: transport, medium
