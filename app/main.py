@@ -2,6 +2,7 @@ import logging.config
 import sys
 import time
 from argparse import ArgumentParser, Namespace
+from datetime import datetime
 from logging import Logger, getLogger
 from threading import Thread
 from zoneinfo import ZoneInfo
@@ -9,6 +10,7 @@ from zoneinfo import ZoneInfo
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import ApplicationSettings, ConfigLoader, validate_settings
 from notify import Notify, build_notify
+from period import Period
 from reload import ConfigChangePoller
 from reminder import send_reminders
 from schedule import every, repeat, run_pending
@@ -63,7 +65,7 @@ def main() -> None:
         try:
             logger.info("Daily scrape and alert job running.")
             collections = scraper.get_upcoming_collections()
-            upcoming_collections = [c for c in collections if c.is_tomorrow]
+            upcoming_collections = Period.TOMORROW.select(collections)
             logger.info(
                 f"{len(upcoming_collections)} collections scheduled for tomorrow."
             )
@@ -72,7 +74,11 @@ def main() -> None:
                 logger.info(f"Upcoming collections: [{services}]")
                 logger.info("Sending notifications about tomorrow's collections.")
                 send_reminders(
-                    notify, settings, upcoming_collections, tz, period="tomorrow"
+                    notify,
+                    settings,
+                    upcoming_collections,
+                    datetime.now(tz),
+                    period=Period.TOMORROW,
                 )
         except Exception:
             logger.exception("Daily scrape and alert job failed.")
@@ -90,10 +96,7 @@ def main() -> None:
         try:
             logger.info("Weekly scrape and alert job running.")
             collections = scraper.get_upcoming_collections()
-            this_week_collections = [c for c in collections if c.is_this_week]
-            this_week_collections = sorted(
-                this_week_collections, key=lambda x: x.next_collection_date
-            )
+            this_week_collections = Period.WEEK.select(collections)
             logger.info(
                 f"{len(this_week_collections)} collections scheduled for this upcoming week."
             )
@@ -102,7 +105,11 @@ def main() -> None:
                 logger.info(f"Collections this week: [{services}]")
                 logger.info("Sending notifications about this week's collections.")
                 send_reminders(
-                    notify, settings, this_week_collections, tz, period="week"
+                    notify,
+                    settings,
+                    this_week_collections,
+                    datetime.now(tz),
+                    period=Period.WEEK,
                 )
         except Exception:
             logger.exception("Weekly scrape and alert job failed.")
