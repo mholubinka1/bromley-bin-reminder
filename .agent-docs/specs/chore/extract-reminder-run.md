@@ -19,7 +19,8 @@ configuration, starting the config poller, and registering one Reminder run per 
 the scheduler.
 
 Nothing a recipient sees changes, and the schedule is unchanged. Only the maintainer's
-info-level log wording changes, and it becomes consistent across Periods.
+log wording changes (the info lines and the failure message), and it becomes consistent
+across Periods.
 
 ## User Stories
 
@@ -94,5 +95,6 @@ info-level log wording changes, and it becomes consistent across Periods.
 ## Further Notes
 
 - Origin: architecture review candidate #1, built on the `Period` type merged in PR #288.
-- The PR description should list the new log wording, since it is the one observable
+- The PR description should list the new log wording, including the failure message
+  (previously "Daily/Weekly scrape and alert job failed."), since it is the one observable
   change.
