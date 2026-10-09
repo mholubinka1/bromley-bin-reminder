@@ -15,6 +15,7 @@ class PeriodDetails:
     ntfy_priority: int
     email_subject: str
     shows_collection_dates: bool
+    collections_label: str
 
 
 @unique
@@ -24,12 +25,14 @@ class Period(Enum):
         ntfy_priority=NIGHT_BEFORE_PRIORITY,
         email_subject="REMINDER: Bins",
         shows_collection_dates=False,
+        collections_label="Tomorrow's collections",
     )
     WEEK = PeriodDetails(
         ntfy_title_suffix="this week",
         ntfy_priority=WEEKLY_PRIORITY,
         email_subject="Weekly Collections",
         shows_collection_dates=True,
+        collections_label="This week's collections",
     )
 
     @property
@@ -47,6 +50,10 @@ class Period(Enum):
     @property
     def shows_collection_dates(self) -> bool:
         return self.value.shows_collection_dates
+
+    @property
+    def collections_label(self) -> str:
+        return self.value.collections_label
 
     def select(self, collections: list[WasteCollection]) -> list[WasteCollection]:
         match self:
