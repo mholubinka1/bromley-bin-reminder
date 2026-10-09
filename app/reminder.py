@@ -34,7 +34,7 @@ def run_reminder(
         if selected:
             services = ", ".join(c.service_name for c in selected)
             logger.info(f"{period.collections_label}: [{services}]")
-            logger.info(f"Sending {period.collections_label} reminders.")
+            logger.info(f"Sending reminders for {period.collections_label.lower()}.")
             send_reminders(notify, settings, selected, clock(), period)
     except Exception:
         logger.exception(f"{period_name} reminder run failed.")

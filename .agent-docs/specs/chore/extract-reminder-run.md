@@ -55,7 +55,7 @@ info-level log wording changes, and it becomes consistent across Periods.
   "This week's collections"), exposed as a property like the existing fields.
 - Log lines of a run: "<Period name> reminder run started."; "<collections_label>: <N>"
   style count line; "<collections_label>: [<services>]" when N is non-zero;
-  "Sending <collections_label> reminders."; and on failure "<Period name> reminder run
+  "Sending reminders for <collections_label, lowercased>."; and on failure "<Period name> reminder run
   failed.". The old four distinct info lines per job are replaced by these.
 - `main.py` registers one run per Period on the scheduler (the scheduling library's
   `.do(...)` form in place of the `@repeat` decorator on nested functions), passing a

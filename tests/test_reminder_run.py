@@ -92,7 +92,7 @@ def test_tomorrow_run_logs_its_progress_and_the_services_it_reminds_about(
         "Tomorrow reminder run started.",
         "Tomorrow's collections: 1",
         "Tomorrow's collections: [Food Waste]",
-        "Sending Tomorrow's collections reminders.",
+        "Sending reminders for tomorrow's collections.",
     ]
 
 
