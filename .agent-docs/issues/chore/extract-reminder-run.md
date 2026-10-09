@@ -1,5 +1,7 @@
 # Issues: chore/extract-reminder-run
 
+> Work complete — PR ready to merge.
+
 ## Run the Tomorrow Reminder through one Reminder run
 
 **GitHub issue**: #291
@@ -14,12 +16,12 @@ Add the Reminder run to the reminder module: it takes a Period, a scraper (descr
 
 ### Acceptance criteria
 
-- [ ] Given a fake scraper returning food waste due tomorrow and garden waste due later, and a fixed clock, a Tomorrow run sends one email and one ntfy notification for food waste only
-- [ ] The email heading shows the clock's date plus one day
-- [ ] The run logs "Tomorrow's collections: [Food Waste]"
-- [ ] Given nothing due tomorrow, nothing is sent
-- [ ] Tests use the existing system-boundary patches and a fixed clock; no time patching
-- [ ] All tests pass
+- [x] Given a fake scraper returning food waste due tomorrow and garden waste due later, and a fixed clock, a Tomorrow run sends one email and one ntfy notification for food waste only
+- [x] The email heading shows the clock's date plus one day
+- [x] The run logs "Tomorrow's collections: [Food Waste]"
+- [x] Given nothing due tomorrow, nothing is sent
+- [x] Tests use the existing system-boundary patches and a fixed clock; no time patching
+- [x] All tests pass
 
 ---
 
@@ -37,10 +39,10 @@ The same Reminder run for the Week Period, and failure survival: any error in a 
 
 ### Acceptance criteria
 
-- [ ] Given collections across the week out of date order, a Week run sends only this week's collections, earliest first, with the weekly email and ntfy wording
-- [ ] The run logs "This week's collections: [..]"
-- [ ] Given a scraper that raises, either run logs "<Period> reminder run failed." with the traceback, sends nothing, and does not propagate the exception
-- [ ] All tests pass
+- [x] Given collections across the week out of date order, a Week run sends only this week's collections, earliest first, with the weekly email and ntfy wording
+- [x] The run logs "This week's collections: [..]"
+- [x] Given a scraper that raises, either run logs "<Period> reminder run failed." with the traceback, sends nothing, and does not propagate the exception
+- [x] All tests pass
 
 ---
 
@@ -58,9 +60,9 @@ Replace the two nested job functions in `main()` with one scheduler registration
 
 ### Acceptance criteria
 
-- [ ] The daily and weekly runs are registered on the same schedule as before, through a scheduling function in the reminder module that is covered by tests (registrations, and each registered job reminds about its own Period using the injected clock)
-- [ ] `main.py` contains no collection selection and no `send_reminders` call
-- [ ] The existing tests pass unchanged
-- [ ] All tests pass
+- [x] The daily and weekly runs are registered on the same schedule as before, through a scheduling function in the reminder module that is covered by tests (registrations, and each registered job reminds about its own Period using the injected clock)
+- [x] `main.py` contains no collection selection and no `send_reminders` call
+- [x] The existing tests pass unchanged
+- [x] All tests pass
 
 ---
