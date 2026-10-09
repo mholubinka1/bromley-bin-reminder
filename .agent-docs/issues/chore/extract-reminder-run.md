@@ -58,7 +58,7 @@ Replace the two nested job functions in `main()` with one scheduler registration
 
 ### Acceptance criteria
 
-- [ ] The daily and weekly runs are registered on the same schedule as before
+- [ ] The daily and weekly runs are registered on the same schedule as before, through a scheduling function in the reminder module that is covered by tests (registrations, and each registered job reminds about its own Period using the injected clock)
 - [ ] `main.py` contains no collection selection and no `send_reminders` call
 - [ ] The existing tests pass unchanged
 - [ ] All tests pass

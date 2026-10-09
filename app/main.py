@@ -10,10 +10,9 @@ from zoneinfo import ZoneInfo
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import ConfigLoader, validate_settings
 from notify import build_notify
-from period import Period
 from reload import ConfigChangePoller
-from reminder import run_reminder
-from schedule import every, run_pending
+from reminder import schedule_reminder_runs
+from schedule import default_scheduler, run_pending
 from scraper import WasteworksScraper
 
 logging.config.dictConfig(config)
@@ -55,11 +54,8 @@ def main() -> None:
     def current_time() -> datetime:
         return datetime.now(tz)
 
-    every().day.at(settings.remind.time, settings.remind.tz).do(
-        run_reminder, Period.TOMORROW, web_scraper, notify, settings, current_time
-    )
-    every().sunday.at(settings.remind.time, settings.remind.tz).do(
-        run_reminder, Period.WEEK, web_scraper, notify, settings, current_time
+    schedule_reminder_runs(
+        default_scheduler, web_scraper, notify, settings, current_time
     )
 
     try:

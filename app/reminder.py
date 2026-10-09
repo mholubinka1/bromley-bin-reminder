@@ -10,6 +10,7 @@ from common.settings import ApplicationSettings
 from notification import WasteCollectionNotification, build_ntfy_notifications
 from notify import Notify
 from period import Period
+from schedule import Scheduler
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -38,6 +39,23 @@ def run_reminder(
             send_reminders(notify, settings, selected, clock(), period)
     except Exception:
         logger.exception(f"{period_name} reminder run failed.")
+
+
+def schedule_reminder_runs(
+    scheduler: Scheduler,
+    scraper: CollectionSource,
+    notify: Notify,
+    settings: ApplicationSettings,
+    clock: Callable[[], datetime],
+) -> None:
+    remind = settings.remind
+    run_args = (scraper, notify, settings, clock)
+    scheduler.every().day.at(remind.time, remind.tz).do(
+        run_reminder, Period.TOMORROW, *run_args
+    )
+    scheduler.every().sunday.at(remind.time, remind.tz).do(
+        run_reminder, Period.WEEK, *run_args
+    )
 
 
 def send_reminders(

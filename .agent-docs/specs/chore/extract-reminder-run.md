@@ -57,8 +57,9 @@ info-level log wording changes, and it becomes consistent across Periods.
   style count line; "<collections_label>: [<services>]" when N is non-zero;
   "Sending reminders for <collections_label, lowercased>."; and on failure "<Period name> reminder run
   failed.". The old four distinct info lines per job are replaced by these.
-- `main.py` registers one run per Period on the scheduler (the scheduling library's
-  `.do(...)` form in place of the `@repeat` decorator on nested functions), passing a
+- A scheduling function in the reminder module registers one run per Period on a given
+  scheduler (the scheduling library's `.do(...)` form in place of the `@repeat` decorator
+  on nested functions), and `main.py` calls it with the library's default scheduler and a
   clock of `datetime.now(tz)`. The daily run keeps `every().day.at(time, tz)` and the
   weekly run `every().sunday.at(time, tz)`. The two commented-out `@repeat` interval
   helper lines are removed, since they described the decorator form this replaces and the
@@ -77,7 +78,10 @@ info-level log wording changes, and it becomes consistent across Periods.
   "Tomorrow's collections: [...]".
 - Prior art: `tests/test_reminder.py` and `tests/test_email_content.py` (patching and the
   fixed `FRIDAY_EVENING` clock), `tests/support.py` (`a_collection`).
-- The scheduler wiring in `main.py` stays untested, as today.
+- The scheduling function is tested with a separate scheduler instance: the daily and
+  Sunday registrations (unit, start day, time, timezone), and that firing each registered
+  job reminds about its own Period using the injected clock. Only `main()`'s call to it
+  (configuration loading and the endless loop) stays untested.
 
 ## Out of Scope
 
