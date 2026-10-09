@@ -8,12 +8,12 @@ from threading import Thread
 from zoneinfo import ZoneInfo
 
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import ApplicationSettings, ConfigLoader, validate_settings
-from notify import Notify, build_notify
+from common.settings import ConfigLoader, validate_settings
+from notify import build_notify
 from period import Period
 from reload import ConfigChangePoller
-from reminder import send_reminders
-from schedule import every, repeat, run_pending
+from reminder import run_reminder
+from schedule import every, run_pending
 from scraper import WasteworksScraper
 
 logging.config.dictConfig(config)
@@ -52,67 +52,15 @@ def main() -> None:
     polling_thread.start()
     logger.info(f"Monitoring config file {config_file} for changes.")
 
-    # @repeat(every(60).seconds, settings, web_scraper, notify)
-    @repeat(
-        every().day.at(settings.remind.time, settings.remind.tz),
-        settings,
-        web_scraper,
-        notify,
-    )
-    def daily_job(
-        settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
-    ) -> None:
-        try:
-            logger.info("Daily scrape and alert job running.")
-            collections = scraper.get_upcoming_collections()
-            upcoming_collections = Period.TOMORROW.select(collections)
-            logger.info(
-                f"{len(upcoming_collections)} collections scheduled for tomorrow."
-            )
-            if len(upcoming_collections) != 0:
-                services = ", ".join([c.service_name for c in upcoming_collections])
-                logger.info(f"Upcoming collections: [{services}]")
-                logger.info("Sending notifications about tomorrow's collections.")
-                send_reminders(
-                    notify,
-                    settings,
-                    upcoming_collections,
-                    datetime.now(tz),
-                    period=Period.TOMORROW,
-                )
-        except Exception:
-            logger.exception("Daily scrape and alert job failed.")
+    def current_time() -> datetime:
+        return datetime.now(tz)
 
-    # @repeat(every(5).seconds, settings, web_scraper, notify)
-    @repeat(
-        every().sunday.at(settings.remind.time, settings.remind.tz),
-        settings,
-        web_scraper,
-        notify,
+    every().day.at(settings.remind.time, settings.remind.tz).do(
+        run_reminder, Period.TOMORROW, web_scraper, notify, settings, current_time
     )
-    def weekly_job(
-        settings: ApplicationSettings, scraper: WasteworksScraper, notify: Notify
-    ) -> None:
-        try:
-            logger.info("Weekly scrape and alert job running.")
-            collections = scraper.get_upcoming_collections()
-            this_week_collections = Period.WEEK.select(collections)
-            logger.info(
-                f"{len(this_week_collections)} collections scheduled for this upcoming week."
-            )
-            if len(this_week_collections) != 0:
-                services = ", ".join([c.service_name for c in this_week_collections])
-                logger.info(f"Collections this week: [{services}]")
-                logger.info("Sending notifications about this week's collections.")
-                send_reminders(
-                    notify,
-                    settings,
-                    this_week_collections,
-                    datetime.now(tz),
-                    period=Period.WEEK,
-                )
-        except Exception:
-            logger.exception("Weekly scrape and alert job failed.")
+    every().sunday.at(settings.remind.time, settings.remind.tz).do(
+        run_reminder, Period.WEEK, web_scraper, notify, settings, current_time
+    )
 
     try:
         while True:
