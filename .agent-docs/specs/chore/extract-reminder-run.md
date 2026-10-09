@@ -60,8 +60,9 @@ info-level log wording changes, and it becomes consistent across Periods.
 - `main.py` registers one run per Period on the scheduler (the scheduling library's
   `.do(...)` form in place of the `@repeat` decorator on nested functions), passing a
   clock of `datetime.now(tz)`. The daily run keeps `every().day.at(time, tz)` and the
-  weekly run `every().sunday.at(time, tz)`. The commented-out interval helper lines are
-  left as they are.
+  weekly run `every().sunday.at(time, tz)`. The two commented-out `@repeat` interval
+  helper lines are removed, since they described the decorator form this replaces and the
+  repo standards forbid commented-out code.
 - No schema, config, or Channel-contract changes. No ADR.
 
 ## Testing Decisions
