@@ -121,9 +121,15 @@ def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> Non
     assert post.call_count == 0
 
 
-@pytest.mark.parametrize("period", list(Period))
+@pytest.mark.parametrize(
+    ("period", "expected_failure_log"),
+    [
+        (Period.TOMORROW, "Tomorrow reminder run failed."),
+        (Period.WEEK, "Week reminder run failed."),
+    ],
+)
 def test_run_that_cannot_scrape_is_logged_and_sends_nothing(
-    period: Period, app_log: pytest.LogCaptureFixture
+    period: Period, expected_failure_log: str, app_log: pytest.LogCaptureFixture
 ) -> None:
     # Given the WasteWorks page cannot be scraped
     settings = ApplicationSettings(yaml_settings())
@@ -143,9 +149,7 @@ def test_run_that_cannot_scrape_is_logged_and_sends_nothing(
 
     # Then the failure is logged against the period, nothing is sent and nothing propagates
     failures = [r for r in app_log.records if r.levelno == logging.ERROR]
-    assert [r.getMessage() for r in failures] == [
-        f"{period.name.title()} reminder run failed."
-    ]
+    assert [r.getMessage() for r in failures] == [expected_failure_log]
     assert failures[0].exc_info is not None
     assert smtp.return_value.sendmail.call_count == 0
     assert post.call_count == 0
