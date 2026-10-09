@@ -134,3 +134,8 @@ class FakeScraper:
 
     def get_upcoming_collections(self) -> list[WasteCollection]:
         return self._collections
+
+
+class FailingScraper:
+    def get_upcoming_collections(self) -> list[WasteCollection]:
+        raise RuntimeError("WasteWorks page could not be rendered")
