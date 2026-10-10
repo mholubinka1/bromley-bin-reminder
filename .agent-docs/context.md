@@ -24,6 +24,10 @@ _Avoid_: alert
 The span a Reminder covers: Tomorrow (the nightly Reminder) or Week (the weekly Reminder, sent on Sundays). A Period decides which Waste Collections a Reminder includes and how that Reminder is worded.
 _Avoid_: schedule, frequency, mode
 
+**Reminder run**:
+One scheduled execution for a single Period: scrape the WasteWorks page, select that Period's Waste Collections, and send the Reminder when there are any. A failed run is logged and never stops later runs.
+_Avoid_: job, task
+
 **Channel**:
 A delivery route for Reminders: email (SMTP) or ntfy. Email is always configured; ntfy is optional. Channels are independent — one failing does not block the other.
 _Avoid_: transport, medium

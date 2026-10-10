@@ -126,3 +126,16 @@ def sent_email(smtp: MagicMock) -> SentEmail:
         header_cells=reader.header_cells,
         rows=[row for row in reader.rows if row],
     )
+
+
+class FakeScraper:
+    def __init__(self, collections: list[WasteCollection]) -> None:
+        self._collections = collections
+
+    def get_upcoming_collections(self) -> list[WasteCollection]:
+        return self._collections
+
+
+class FailingScraper:
+    def get_upcoming_collections(self) -> list[WasteCollection]:
+        raise RuntimeError("WasteWorks page could not be rendered")
