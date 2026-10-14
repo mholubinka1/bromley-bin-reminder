@@ -115,23 +115,3 @@ def test_scraper_fails_when_the_page_cannot_be_rendered() -> None:
     # Then the render failure reaches the caller
     with pytest.raises(ScraperError):
         scraper.get_upcoming_collections()
-
-
-def test_scraper_flags_collections_that_are_tomorrow_or_this_week() -> None:
-    # Given a Friday-evening clock and collections tomorrow and ten days away
-    page = a_wasteworks_page(
-        ("Food Waste", "Saturday, 3rd October"),
-        ("Garden Waste", "Monday, 12th October"),
-    )
-    scraper = WasteworksScraper(
-        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
-    )
-
-    # When the upcoming collections are read
-    collections = scraper.get_upcoming_collections()
-
-    # Then only the first is flagged as tomorrow and as this week
-    assert [(c.service_name, c.is_tomorrow, c.is_this_week) for c in collections] == [
-        ("Food Waste", True, True),
-        ("Garden Waste", False, False),
-    ]

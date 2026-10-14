@@ -51,8 +51,8 @@ def test_scheduled_runs_remind_about_their_own_period_using_the_clock() -> None:
     settings = settings_reminding_at_six_pm_in_london()
     scraper = FakeScraper(
         [
-            a_collection("Food Waste", day=3, is_tomorrow=True),
-            a_collection("Garden Waste", day=6, is_tomorrow=False),
+            a_collection("Food Waste", day=3),
+            a_collection("Garden Waste", day=6),
         ]
     )
     scheduler = Scheduler()

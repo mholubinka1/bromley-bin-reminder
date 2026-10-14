@@ -15,17 +15,10 @@ LONDON = ZoneInfo("Europe/London")
 FRIDAY_EVENING = datetime(2026, 10, 2, 18, 0, tzinfo=LONDON)
 
 
-def a_collection(
-    service_name: str,
-    day: int = 3,
-    is_tomorrow: bool = True,
-    is_this_week: bool = True,
-) -> WasteCollection:
+def a_collection(service_name: str, day: int = 3) -> WasteCollection:
     return WasteCollection(
         service_name=service_name,
         next_collection_date=datetime(2026, 10, day, tzinfo=LONDON),
-        is_tomorrow=is_tomorrow,
-        is_this_week=is_this_week,
     )
 
 

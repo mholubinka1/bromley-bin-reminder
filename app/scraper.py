@@ -7,7 +7,7 @@ from logging import Logger, getLogger
 from typing import Protocol
 
 from bs4 import BeautifulSoup
-from collection import WasteCollection, is_collection_this_week, is_collection_tomorrow
+from collection import WasteCollection
 from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
 from selenium import webdriver
@@ -66,7 +66,7 @@ class SeleniumPageSource:
             raise ScraperError(f"Failed to render Wasteworks page: {url}")
 
 
-def parse_date(date: str, now: datetime) -> tuple[bool, bool, datetime]:
+def parse_date(date: str, now: datetime) -> datetime:
     date = re.sub(r"\(.*?\)", "", date)
     date = re.sub(r"\b(\d+)(th|rd|nd|st)\b", r"\1", date)
     date = date.strip()
@@ -81,13 +81,7 @@ def parse_date(date: str, now: datetime) -> tuple[bool, bool, datetime]:
     collection_date = datetime.strptime(
         f"{date} {target_year}", "%A, %d %B %Y"
     ).replace(tzinfo=now.tzinfo)
-    is_tomorrow = is_collection_tomorrow(
-        current_date=now, collection_date=collection_date
-    )
-    is_this_week = is_collection_this_week(
-        current_date=now, collection_date=collection_date
-    )
-    return (is_tomorrow, is_this_week, collection_date)
+    return collection_date
 
 
 class WasteworksScraper:
@@ -115,7 +109,7 @@ class WasteworksScraper:
             service_name = service.get_text(strip=True)
             next_collection = service.find_next("dt", string="Next collection")  # type: ignore[call-overload]
             if next_collection:
-                is_tomorrow, is_this_week, next_collection_date = parse_date(
+                next_collection_date = parse_date(
                     next_collection.find_next_sibling("dd").get_text(strip=True),
                     now,
                 )
@@ -123,8 +117,6 @@ class WasteworksScraper:
                     WasteCollection(
                         service_name=service_name,
                         next_collection_date=next_collection_date,
-                        is_tomorrow=is_tomorrow,
-                        is_this_week=is_this_week,
                     )
                 )
         logger.info(f"Found data for {len(collections)} upcoming collections.")
