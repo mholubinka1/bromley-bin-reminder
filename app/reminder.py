@@ -30,13 +30,15 @@ def run_reminder(
     period_name = period.name.title()
     logger.info(f"{period_name} reminder run started.")
     try:
-        selected = period.select(scraper.get_upcoming_collections())
+        collections = scraper.get_upcoming_collections()
+        now = clock()
+        selected = period.select(collections, now)
         logger.info(f"{period.collections_label}: {len(selected)}")
         if selected:
             services = ", ".join(c.service_name for c in selected)
             logger.info(f"{period.collections_label}: [{services}]")
             logger.info(f"Sending reminders for {period.collections_label.lower()}.")
-            send_reminders(notify, settings, selected, clock(), period)
+            send_reminders(notify, settings, selected, now, period)
     except Exception:
         logger.exception(f"{period_name} reminder run failed.")
 

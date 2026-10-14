@@ -41,9 +41,13 @@ The ntfy channel name a Reminder is published to. Effectively a secret on public
 _Avoid_: channel, room
 
 **Scraper**:
-The component (`WasteworksScraper`) that drives a headless Firefox browser via Selenium to render the WasteWorks page and extract collection data with BeautifulSoup.
+The component (`WasteworksScraper`) that obtains the WasteWorks page from a Page source and extracts the Waste Collections from its HTML with BeautifulSoup, resolving each collection date against the current date.
 _Avoid_: crawler, parser
 
+**Page source**:
+Where the Scraper gets the rendered WasteWorks page HTML from: a headless Firefox browser driven via Selenium in production, saved HTML in tests.
+_Avoid_: fetcher, downloader, driver
+
 **ENV_FLAG**:
-The environment variable selecting how the scraper launches its Firefox WebDriver — `local` (system-installed geckodriver) or `docker` (fixed path to a container-bundled geckodriver). Any other value is treated as unhandled and raises an error.
+The environment variable selecting how the Selenium Page source launches its Firefox WebDriver — `local` (system-installed geckodriver) or `docker` (fixed path to a container-bundled geckodriver). Any other value is treated as unhandled and raises an error.
 _Avoid_: environment, mode

@@ -1,8 +1,10 @@
 import logging
 from collections.abc import Iterator
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from collection import WasteCollection
 from common.logging import APP_LOGGER_NAME
 from common.settings import ApplicationSettings
 from notify import build_notify
@@ -10,6 +12,7 @@ from period import Period
 from reminder import run_reminder
 from support import (
     FRIDAY_EVENING,
+    LONDON,
     FailingScraper,
     FakeScraper,
     a_collection,
@@ -36,8 +39,8 @@ def test_tomorrow_run_reminds_only_about_the_bins_collected_tomorrow() -> None:
     )
     scraper = FakeScraper(
         [
-            a_collection("Food Waste", day=3, is_tomorrow=True),
-            a_collection("Garden Waste", day=6, is_tomorrow=False),
+            a_collection("Food Waste", day=3),
+            a_collection("Garden Waste", day=6),
         ]
     )
 
@@ -71,8 +74,8 @@ def test_tomorrow_run_logs_its_progress_and_the_services_it_reminds_about(
     settings = ApplicationSettings(yaml_settings())
     scraper = FakeScraper(
         [
-            a_collection("Food Waste", day=3, is_tomorrow=True),
-            a_collection("Garden Waste", day=6, is_tomorrow=False),
+            a_collection("Food Waste", day=3),
+            a_collection("Garden Waste", day=6),
         ]
     )
 
@@ -101,7 +104,7 @@ def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> Non
     settings = ApplicationSettings(
         yaml_settings(ntfy={"server": NTFY_SERVER, "topic": "a-topic"})
     )
-    scraper = FakeScraper([a_collection("Garden Waste", day=6, is_tomorrow=False)])
+    scraper = FakeScraper([a_collection("Garden Waste", day=6)])
 
     # When the Tomorrow reminder run executes
     with (
@@ -119,6 +122,32 @@ def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> Non
     # Then no email and no push go out
     assert smtp.return_value.sendmail.call_count == 0
     assert post.call_count == 0
+
+
+def test_run_reads_the_clock_once() -> None:
+    # Given a clock that counts how often it is read and a bin collected tomorrow
+    settings = ApplicationSettings(yaml_settings())
+    scraper = FakeScraper([a_collection("Food Waste", day=3)])
+    clock_reads = 0
+
+    def counting_clock() -> datetime:
+        nonlocal clock_reads
+        clock_reads += 1
+        return FRIDAY_EVENING
+
+    # When the Tomorrow reminder run selects and sends
+    with patch("notify.SMTP") as smtp, patch("notify.requests.post"):
+        run_reminder(
+            Period.TOMORROW,
+            scraper,
+            build_notify(settings),
+            settings,
+            clock=counting_clock,
+        )
+
+    # Then the reminder went out and the clock was read exactly once
+    assert smtp.return_value.sendmail.call_count == 1
+    assert clock_reads == 1
 
 
 @pytest.mark.parametrize(
@@ -164,9 +193,9 @@ def test_week_run_reminds_about_this_weeks_bins_earliest_first(
     )
     scraper = FakeScraper(
         [
-            a_collection("Garden Waste", day=8, is_this_week=True),
-            a_collection("Paper & Cardboard", day=20, is_this_week=False),
-            a_collection("Food Waste", day=6, is_this_week=True),
+            a_collection("Garden Waste", day=8),
+            a_collection("Paper & Cardboard", day=20),
+            a_collection("Food Waste", day=6),
         ]
     )
 
@@ -194,3 +223,32 @@ def test_week_run_reminds_about_this_weeks_bins_earliest_first(
     assert "This week's collections: [Food Waste, Garden Waste]" in [
         r.getMessage() for r in app_log.records
     ]
+
+
+def test_run_whose_scrape_crosses_midnight_selects_for_the_day_after_the_scrape() -> (
+    None
+):
+    # Given the run starts on Friday night and the scrape finishes after midnight,
+    # with food waste dated Sunday 4th October
+    settings = ApplicationSettings(yaml_settings())
+    time_now = {"now": datetime(2026, 10, 2, 23, 58, tzinfo=LONDON)}
+
+    class MidnightCrossingScraper:
+        def get_upcoming_collections(self) -> list[WasteCollection]:
+            time_now["now"] = datetime(2026, 10, 3, 0, 3, tzinfo=LONDON)
+            return [a_collection("Food Waste", day=4)]
+
+    # When the Tomorrow reminder run executes
+    with patch("notify.SMTP") as smtp:
+        run_reminder(
+            Period.TOMORROW,
+            MidnightCrossingScraper(),
+            build_notify(settings),
+            settings,
+            clock=lambda: time_now["now"],
+        )
+
+    # Then the run reminds about Sunday's bins, as the day after the scrape finished
+    email = sent_email(smtp)
+    assert email.heading == "Sunday 4th October"
+    assert [row[0] for row in email.rows] == ["Food Waste"]

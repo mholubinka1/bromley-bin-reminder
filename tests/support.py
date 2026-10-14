@@ -15,17 +15,10 @@ LONDON = ZoneInfo("Europe/London")
 FRIDAY_EVENING = datetime(2026, 10, 2, 18, 0, tzinfo=LONDON)
 
 
-def a_collection(
-    service_name: str,
-    day: int = 3,
-    is_tomorrow: bool = True,
-    is_this_week: bool = True,
-) -> WasteCollection:
+def a_collection(service_name: str, day: int = 3) -> WasteCollection:
     return WasteCollection(
         service_name=service_name,
         next_collection_date=datetime(2026, 10, day, tzinfo=LONDON),
-        is_tomorrow=is_tomorrow,
-        is_this_week=is_this_week,
     )
 
 
@@ -139,3 +132,28 @@ class FakeScraper:
 class FailingScraper:
     def get_upcoming_collections(self) -> list[WasteCollection]:
         raise RuntimeError("WasteWorks page could not be rendered")
+
+
+def a_wasteworks_page(*services: tuple[str, str | None]) -> str:
+    """Render a WasteWorks page; a None date leaves out the service's "Next collection" row."""
+    sections = []
+    for service_name, next_collection in services:
+        next_collection_row = (
+            f"<div><dt>Next collection</dt><dd>{next_collection}</dd></div>"
+            if next_collection is not None
+            else ""
+        )
+        sections.append(
+            f'<h3 class="govuk-heading-m waste-service-name">{service_name}</h3>'
+            f"<dl><div><dt>Frequency</dt><dd>Every week</dd></div>"
+            f"{next_collection_row}</dl>"
+        )
+    return f"<html><body>{''.join(sections)}</body></html>"
+
+
+class FixturePageSource:
+    def __init__(self, html: str) -> None:
+        self._html = html
+
+    def render(self, url: str) -> str:
+        return self._html

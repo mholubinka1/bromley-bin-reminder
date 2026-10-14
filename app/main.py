@@ -13,7 +13,7 @@ from notify import build_notify
 from reload import ConfigChangePoller
 from reminder import schedule_reminder_runs
 from schedule import default_scheduler, run_pending
-from scraper import WasteworksScraper
+from scraper import SeleniumPageSource, WasteworksScraper
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -36,7 +36,13 @@ def main() -> None:
         settings = configLoader.get_config()
         validate_settings(settings)
         tz = ZoneInfo(settings.remind.tz)
-        web_scraper = WasteworksScraper(settings.wasteworks_url, tz)
+
+        def current_time() -> datetime:
+            return datetime.now(tz)
+
+        web_scraper = WasteworksScraper(
+            SeleniumPageSource(), settings.wasteworks_url, current_time
+        )
         logger.info(f"ntfy notifications {'enabled' if settings.ntfy else 'disabled'}.")
         notify = build_notify(settings)
     except Exception:
@@ -50,9 +56,6 @@ def main() -> None:
     polling_thread = Thread(target=poller.poll, daemon=True)
     polling_thread.start()
     logger.info(f"Monitoring config file {config_file} for changes.")
-
-    def current_time() -> datetime:
-        return datetime.now(tz)
 
     schedule_reminder_runs(
         default_scheduler, web_scraper, notify, settings, current_time

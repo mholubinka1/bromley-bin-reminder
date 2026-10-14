@@ -7,6 +7,7 @@ from collection import WasteCollection, print_date
 NIGHT_BEFORE_PRIORITY = 4
 WEEKLY_PRIORITY = 3
 WEEK_COMMENCING_PREFIX = "Week Commencing: "
+WEEK_LOOKAHEAD_DAYS = 8
 
 
 @dataclass(frozen=True)
@@ -55,13 +56,24 @@ class Period(Enum):
     def collections_label(self) -> str:
         return self.value.collections_label
 
-    def select(self, collections: list[WasteCollection]) -> list[WasteCollection]:
+    def select(
+        self, collections: list[WasteCollection], today: datetime
+    ) -> list[WasteCollection]:
         match self:
             case Period.TOMORROW:
-                return [c for c in collections if c.is_tomorrow]
+                tomorrow = (today + timedelta(days=1)).date()
+                return [
+                    c for c in collections if c.next_collection_date.date() == tomorrow
+                ]
             case Period.WEEK:
+                # the week includes the following monday to avoid the situation where monday bins aren't notified a week in advance
+                week_end = (today + timedelta(days=WEEK_LOOKAHEAD_DAYS)).date()
                 return sorted(
-                    (c for c in collections if c.is_this_week),
+                    (
+                        c
+                        for c in collections
+                        if c.next_collection_date.date() < week_end
+                    ),
                     key=lambda c: c.next_collection_date,
                 )
 
