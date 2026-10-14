@@ -33,11 +33,12 @@ rules are preserved exactly, quirks included.
 4. As the maintainer, I want the Selenium browser code isolated behind one small adapter,
    so that changing how the page is fetched cannot affect parsing.
 5. As a resident, I want the nightly Reminder to cover exactly tomorrow's collections and
-   the weekly Reminder exactly this week's (including the following Monday), as today.
+   the weekly Reminder exactly this week's (a Sunday run covers the coming Monday through
+   the following Sunday), as today.
 6. As the maintainer, I want a collection dated early January to resolve to the next year
    when the page is read in late December, as today.
-7. As the maintainer, I want a single reading of the clock per Reminder run used for both
-   selecting and sending, so that a run is internally consistent.
+7. As the maintainer, I want the Reminder run to read the clock once and use that reading
+   for both selecting and sending, so that selection and the email agree on today.
 
 ## Implementation Decisions
 
@@ -61,12 +62,13 @@ rules are preserved exactly, quirks included.
   `is_collection_this_week` predicates are removed.
 - `Period.select(collections, today)` takes the current time. Tomorrow keeps collections
   dated the day after `today`. Week keeps collections dated before the day eight days after
-  `today` (so the following Monday is included, and, as today, there is no lower bound),
-  sorted by date. These are exactly the rules of the removed predicates.
-- The Reminder run reads its clock once per run, after the scrape completes (as the old
-  flags were decided at scrape time, so a scrape that crosses midnight selects for the day
-  after it finished), and uses that single reading for both `Period.select` and
-  `send_reminders`.
+  `today` (so a Sunday run covers the coming Monday through the following Sunday, and, as
+  today, there is no lower bound), sorted by date. These are exactly the rules of the
+  removed predicates.
+- The Reminder run itself reads its clock once per run, after the scrape completes (as the
+  old flags were decided at scrape time, so a scrape that crosses midnight selects for the
+  day after it finished), and uses that single reading for both `Period.select` and
+  `send_reminders`. The Scraper reads the clock separately, to resolve the year.
 - `main.py` constructs the Scraper with a Selenium Page source, the URL and its existing
   current-time clock, replacing the timezone argument.
 - The latent leap-day crash in date parsing (a collection dated 29 February fails to parse
@@ -82,8 +84,9 @@ rules are preserved exactly, quirks included.
   late-December clock with a January date; a service with no next collection; an empty
   page; a Page source that raises `ScraperError`.
 - `Period.select(collections, today)` is tested directly as a pure function: Tomorrow's
-  boundary, Week's boundary at the following Monday and the day after, date ordering, and
-  empty input. These replace the flag-based tests.
+  boundary, Week's boundary (seven days on is included, eight days on is not, including a
+  Sunday run and a past-dated bin), date ordering, and empty input. These replace the
+  flag-based tests.
 - The Reminder run, scheduling and reminder tests are updated, not extended: collections
   are built from dates and the injected clock instead of flags, and they keep proving each
   run reminds about the right collections end to end.

@@ -61,3 +61,35 @@ def test_tomorrow_compares_calendar_dates_not_elapsed_time() -> None:
 
     # Then only the bin dated the next calendar day is selected
     assert [c.service_name for c in selected] == ["Tomorrow"]
+
+
+def test_week_run_on_a_sunday_covers_the_coming_monday_through_the_next_sunday() -> (
+    None
+):
+    # Given bins dated the coming Monday, the Sunday after it, and the Monday after that
+    collections = [
+        a_collection("Coming Monday", day=5),
+        a_collection("Next Sunday", day=11),
+        a_collection("Monday After", day=12),
+    ]
+
+    # When the weekly bins are selected on Sunday 4th October
+    sunday_evening = datetime(2026, 10, 4, 18, 0, tzinfo=LONDON)
+    selected = Period.WEEK.select(collections, sunday_evening)
+
+    # Then the Monday a week on is left for next week's reminder
+    assert [c.service_name for c in selected] == ["Coming Monday", "Next Sunday"]
+
+
+def test_week_selection_keeps_a_bin_dated_before_today() -> None:
+    # Given a bin dated Thursday 1st October and one dated Saturday 3rd
+    collections = [
+        a_collection("Yesterday", day=1),
+        a_collection("Tomorrow", day=3),
+    ]
+
+    # When the weekly bins are selected on Friday 2nd October
+    selected = Period.WEEK.select(collections, FRIDAY_EVENING)
+
+    # Then the past-dated bin is still selected, as there is no lower bound
+    assert [c.service_name for c in selected] == ["Yesterday", "Tomorrow"]

@@ -39,10 +39,10 @@ Introduce the `PageSource` Protocol and move every browser concern (driver creat
 ### Acceptance criteria
 
 - [ ] Tomorrow keeps only collections dated tomorrow
-- [ ] Week keeps everything dated before today plus 8 days (including the following Monday), excludes today plus 8 days, and sorts by date
+- [ ] Week keeps everything dated before today plus 8 days, with no lower bound (so a Sunday run covers the coming Monday through the following Sunday), excludes today plus 8 days, and sorts by date
 - [ ] Both Periods return an empty list for empty input
 - [ ] `WasteCollection` has no `is_tomorrow`/`is_this_week` fields, and the predicates are gone
-- [ ] The Reminder run reads its clock once per run
+- [ ] The Reminder run itself reads its clock once per run, after the scrape (the Scraper reads the clock separately to resolve the year)
 - [ ] The existing run, scheduling and reminder tests pass with collections defined by date
 - [ ] All tests pass
 
