@@ -1,5 +1,7 @@
 # Issues: chore/split-scraper-seam
 
+> Work complete — PR ready to merge.
+
 ## Make the Page source a real seam and test the Scraper's parsing
 
 **GitHub issue**: #296
@@ -14,13 +16,13 @@ Introduce the `PageSource` Protocol and move every browser concern (driver creat
 
 ### Acceptance criteria
 
-- [ ] Given fixture HTML with several services and a fixed clock, the Scraper returns each service with its dated, timezone-aware collection
-- [ ] A date with an ordinal suffix and an "(In Progress)" note parses to the right day
-- [ ] Given a late-December clock and an early-January date, the collection resolves to January of the next year
-- [ ] A service with no "Next collection" row is skipped; an empty page yields no collections
-- [ ] A Page source that raises `ScraperError` propagates from `get_upcoming_collections()`
-- [ ] `main.py` constructs the Scraper with a Selenium Page source, the URL and a clock, and no longer passes a timezone
-- [ ] All tests pass
+- [x] Given fixture HTML with several services and a fixed clock, the Scraper returns each service with its dated, timezone-aware collection
+- [x] A date with an ordinal suffix and an "(In Progress)" note parses to the right day
+- [x] Given a late-December clock and an early-January date, the collection resolves to January of the next year
+- [x] A service with no "Next collection" row is skipped; an empty page yields no collections
+- [x] A Page source that raises `ScraperError` propagates from `get_upcoming_collections()`
+- [x] `main.py` constructs the Scraper with a Selenium Page source, the URL and a clock, and no longer passes a timezone
+- [x] All tests pass
 
 ---
 
@@ -38,12 +40,12 @@ Introduce the `PageSource` Protocol and move every browser concern (driver creat
 
 ### Acceptance criteria
 
-- [ ] Tomorrow keeps only collections dated tomorrow
-- [ ] Week keeps everything dated before today plus 8 days, with no lower bound (so a Sunday run covers the coming Monday through the following Sunday), excludes today plus 8 days, and sorts by date
-- [ ] Both Periods return an empty list for empty input
-- [ ] `WasteCollection` has no `is_tomorrow`/`is_this_week` fields, and the predicates are gone
-- [ ] The Reminder run itself reads its clock once per run, after the scrape (the Scraper reads the clock separately to resolve the year)
-- [ ] The existing run, scheduling and reminder tests pass with collections defined by date
-- [ ] All tests pass
+- [x] Tomorrow keeps only collections dated tomorrow
+- [x] Week keeps everything dated before today plus 8 days, with no lower bound (so a Sunday run covers the coming Monday through the following Sunday), excludes today plus 8 days, and sorts by date
+- [x] Both Periods return an empty list for empty input
+- [x] `WasteCollection` has no `is_tomorrow`/`is_this_week` fields, and the predicates are gone
+- [x] The Reminder run itself reads its clock once per run, after the scrape (the Scraper reads the clock separately to resolve the year)
+- [x] The existing run, scheduling and reminder tests pass with collections defined by date
+- [x] All tests pass
 
 ---
