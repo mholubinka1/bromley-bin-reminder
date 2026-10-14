@@ -4,6 +4,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from collection import WasteCollection
 from common.logging import APP_LOGGER_NAME
 from common.settings import ApplicationSettings
 from notify import build_notify
@@ -11,6 +12,7 @@ from period import Period
 from reminder import run_reminder
 from support import (
     FRIDAY_EVENING,
+    LONDON,
     FailingScraper,
     FakeScraper,
     a_collection,
@@ -221,3 +223,32 @@ def test_week_run_reminds_about_this_weeks_bins_earliest_first(
     assert "This week's collections: [Food Waste, Garden Waste]" in [
         r.getMessage() for r in app_log.records
     ]
+
+
+def test_run_whose_scrape_crosses_midnight_selects_for_the_day_after_the_scrape() -> (
+    None
+):
+    # Given the run starts on Friday night and the scrape finishes after midnight,
+    # with food waste dated Sunday 4th October
+    settings = ApplicationSettings(yaml_settings())
+    time_now = {"now": datetime(2026, 10, 2, 23, 58, tzinfo=LONDON)}
+
+    class MidnightCrossingScraper:
+        def get_upcoming_collections(self) -> list[WasteCollection]:
+            time_now["now"] = datetime(2026, 10, 3, 0, 3, tzinfo=LONDON)
+            return [a_collection("Food Waste", day=4)]
+
+    # When the Tomorrow reminder run executes
+    with patch("notify.SMTP") as smtp:
+        run_reminder(
+            Period.TOMORROW,
+            MidnightCrossingScraper(),
+            build_notify(settings),
+            settings,
+            clock=lambda: time_now["now"],
+        )
+
+    # Then the run reminds about Sunday's bins, as the day after the scrape finished
+    email = sent_email(smtp)
+    assert email.heading == "Sunday 4th October"
+    assert [row[0] for row in email.rows] == ["Food Waste"]

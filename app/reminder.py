@@ -30,8 +30,9 @@ def run_reminder(
     period_name = period.name.title()
     logger.info(f"{period_name} reminder run started.")
     try:
+        collections = scraper.get_upcoming_collections()
         now = clock()
-        selected = period.select(scraper.get_upcoming_collections(), now)
+        selected = period.select(collections, now)
         logger.info(f"{period.collections_label}: {len(selected)}")
         if selected:
             services = ", ".join(c.service_name for c in selected)

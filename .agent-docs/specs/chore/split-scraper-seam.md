@@ -63,8 +63,10 @@ rules are preserved exactly, quirks included.
   dated the day after `today`. Week keeps collections dated before the day eight days after
   `today` (so the following Monday is included, and, as today, there is no lower bound),
   sorted by date. These are exactly the rules of the removed predicates.
-- The Reminder run reads its clock once per run and uses that single reading for both
-  `Period.select` and `send_reminders`.
+- The Reminder run reads its clock once per run, after the scrape completes (as the old
+  flags were decided at scrape time, so a scrape that crosses midnight selects for the day
+  after it finished), and uses that single reading for both `Period.select` and
+  `send_reminders`.
 - `main.py` constructs the Scraper with a Selenium Page source, the URL and its existing
   current-time clock, replacing the timezone argument.
 - The latent leap-day crash in date parsing (a collection dated 29 February fails to parse
