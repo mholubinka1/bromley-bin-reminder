@@ -1,5 +1,7 @@
 # Issues: bugfix/parse-29-february
 
+> Work complete — PR ready to merge.
+
 ## Scraper fails to parse a collection dated 29 February
 
 **GitHub issue**: #298
@@ -14,10 +16,10 @@ Read the month from the month name in the cleaned date text, derive the target y
 
 ### Acceptance criteria
 
-- [ ] Given a page listing "Tuesday, 29th February" and a clock on Friday 25 February 2028 in London, the Scraper returns a collection dated 29 February 2028 in London time
-- [ ] The regression test fails before the fix and passes after it
-- [ ] The existing Scraper tests pass unchanged (suffixes, "(In Progress)", the December-to-January rollover, a missing next collection, an empty page, a render failure)
-- [ ] A malformed date still raises `ValueError`
-- [ ] All tests pass
+- [x] Given a page listing "Tuesday, 29th February" and a clock on Friday 25 February 2028 in London, the Scraper returns a collection dated 29 February 2028 in London time
+- [x] The regression test fails before the fix and passes after it
+- [x] The existing Scraper tests pass unchanged (suffixes, "(In Progress)", the December-to-January rollover, a missing next collection, an empty page, a render failure)
+- [x] A malformed date still raises `ValueError`
+- [x] All tests pass
 
 ---
