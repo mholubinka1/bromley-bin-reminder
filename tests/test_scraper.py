@@ -73,6 +73,41 @@ def test_scraper_dates_a_january_collection_read_in_december_in_the_next_year() 
     ]
 
 
+def test_scraper_reads_a_collection_dated_on_a_leap_day() -> None:
+    # Given a clock on Friday 25 February 2028 and a page listing Tuesday 29th February
+    friday_evening_in_a_leap_year = datetime(2028, 2, 25, 18, 0, tzinfo=LONDON)
+    page = a_wasteworks_page(("Food Waste", "Tuesday, 29th February"))
+    scraper = WasteworksScraper(
+        FixturePageSource(page),
+        WASTEWORKS_URL,
+        clock=lambda: friday_evening_in_a_leap_year,
+    )
+
+    # When the upcoming collections are read
+    collections = scraper.get_upcoming_collections()
+
+    # Then the collection is dated the leap day
+    assert [c.next_collection_date for c in collections] == [
+        datetime(2028, 2, 29, tzinfo=LONDON)
+    ]
+
+
+@pytest.mark.parametrize("unreadable_date", ["", "Soon", "Tuesday, 3rd Octobre"])
+def test_scraper_fails_on_a_collection_date_it_cannot_read(
+    unreadable_date: str,
+) -> None:
+    # Given a page whose collection date is not in the expected format
+    page = a_wasteworks_page(("Food Waste", unreadable_date))
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the upcoming collections are read
+    # Then the date is rejected as an invalid value
+    with pytest.raises(ValueError):
+        scraper.get_upcoming_collections()
+
+
 def test_scraper_skips_a_service_without_a_next_collection() -> None:
     # Given a page whose last service has no next collection
     page = a_wasteworks_page(

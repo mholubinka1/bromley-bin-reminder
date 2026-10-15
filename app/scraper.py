@@ -72,8 +72,10 @@ def parse_date(date: str, now: datetime) -> datetime:
     date = date.strip()
     current_year = now.year
     current_month = now.month
-    parsed_date = datetime.strptime(date, "%A, %d %B").replace(tzinfo=now.tzinfo)
-    collection_month = parsed_date.month
+    month_name = date.rpartition(" ")[2]
+    collection_month = (
+        datetime.strptime(month_name, "%B").replace(tzinfo=now.tzinfo).month
+    )
     if current_month == 12 and collection_month == 1:
         target_year = current_year + 1
     else:
