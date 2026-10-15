@@ -73,6 +73,27 @@ def test_scraper_dates_a_january_collection_read_in_december_in_the_next_year() 
     ]
 
 
+@pytest.mark.parametrize(
+    "separator", [" ", "\t", "\n"], ids=["non-breaking space", "tab", "newline"]
+)
+def test_scraper_reads_a_date_whose_month_follows_any_whitespace(
+    separator: str,
+) -> None:
+    # Given a page whose date has a non-space whitespace character before the month
+    page = a_wasteworks_page(("Food Waste", f"Saturday, 3rd{separator}October"))
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the upcoming collections are read
+    collections = scraper.get_upcoming_collections()
+
+    # Then the date is read as normal
+    assert [c.next_collection_date for c in collections] == [
+        datetime(2026, 10, 3, tzinfo=LONDON)
+    ]
+
+
 def test_scraper_reads_a_collection_dated_on_a_leap_day() -> None:
     # Given a clock on Friday 25 February 2028 and a page listing Tuesday 29th February
     friday_evening_in_a_leap_year = datetime(2028, 2, 25, 18, 0, tzinfo=LONDON)

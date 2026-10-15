@@ -72,7 +72,7 @@ def parse_date(date: str, now: datetime) -> datetime:
     date = date.strip()
     current_year = now.year
     current_month = now.month
-    month_name = date.rpartition(" ")[2]
+    month_name = date.split()[-1] if date else ""
     collection_month = (
         datetime.strptime(month_name, "%B").replace(tzinfo=now.tzinfo).month
     )
