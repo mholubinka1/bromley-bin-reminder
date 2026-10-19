@@ -1,5 +1,7 @@
 # Issues: chore/validated-settings
 
+> Work complete — PR ready to merge.
+
 ## Settings are built and validated by one call
 
 **Blocked by**: None
@@ -19,14 +21,14 @@ timezone instead of parsing the name again. Tests that built settings directly u
 
 ### Acceptance criteria
 
-- [ ] Given a blank poll time, when parsed, then the time is 18:00 and a warning is logged
-- [ ] Given a blank timezone, when parsed, then the timezone is Europe/London and a warning is logged
-- [ ] Given an unrecognised timezone, when parsed, then the timezone is Europe/London and a warning is logged
-- [ ] Given a valid timezone, when parsed, then `timezone` is that zone and `remind.tz` is its name
-- [ ] Given a blank URL, blank SMTP username, or missing SMTP server or port, when parsed, then it raises `RuntimeError` with the current message
-- [ ] Given a missing required key, when parsed, then it raises
-- [ ] The existing ntfy rules behave as before
-- [ ] `validate_settings` is gone; `pytz` stays (the scheduler uses it, and the timezone check uses its zone list so the two agree)
+- [x] Given a blank poll time, when parsed, then the time is 18:00 and a warning is logged
+- [x] Given a blank timezone, when parsed, then the timezone is Europe/London and a warning is logged
+- [x] Given an unrecognised timezone, when parsed, then the timezone is Europe/London and a warning is logged
+- [x] Given a valid timezone, when parsed, then `timezone` is that zone and `remind.tz` is its name
+- [x] Given a blank URL, blank SMTP username, or missing SMTP server or port, when parsed, then it raises `RuntimeError` with the current message
+- [x] Given a missing required key, when parsed, then it raises
+- [x] The existing ntfy rules behave as before
+- [x] `validate_settings` is gone; `pytz` stays (the scheduler uses it, and the timezone check uses its zone list so the two agree)
 
 ---
 
@@ -45,9 +47,9 @@ startup handler, which logs "Could not load startup configuration." and exits 1.
 
 ### Acceptance criteria
 
-- [ ] Given a valid file, when loaded, then valid settings are returned
-- [ ] Given a missing file, when loaded, then it raises and the message names the path
-- [ ] Given malformed YAML, when loaded, then it raises and the message names the path
-- [ ] `ConfigLoader` and its `sys.exit` are gone; `main()` still logs and exits 1 on any startup failure
+- [x] Given a valid file, when loaded, then valid settings are returned
+- [x] Given a missing file, when loaded, then it raises and the message names the path
+- [x] Given malformed YAML, when loaded, then it raises and the message names the path
+- [x] `ConfigLoader` and its `sys.exit` are gone; `main()` still logs and exits 1 on any startup failure
 
 ---
