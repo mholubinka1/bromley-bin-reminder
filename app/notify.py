@@ -72,6 +72,12 @@ class NtfyClient:
 
 
 class Channel(Protocol):
+    """A delivery route for a Reminder.
+
+    send must not raise: a Channel catches and logs its own failures, so one failing
+    Channel can never stop the next from delivering.
+    """
+
     def send(
         self, collections: list[WasteCollection], now: datetime, period: Period
     ) -> None: ...

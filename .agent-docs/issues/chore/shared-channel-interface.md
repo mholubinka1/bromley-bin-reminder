@@ -24,7 +24,7 @@ signatures, and the ntfy delivery tests exercise the ntfy Channel directly.
 - [ ] Given the email fails, when a Reminder is sent, then the failure is logged as before and the pushes still go out
 - [ ] Given one ntfy notification fails, when the Reminder is sent, then the others are still delivered and the topic is never logged
 - [ ] Given plain fake Channels, when the run sends, then each receives the same collections, clock reading and Period, in order
-- [ ] `Notify` and `build_notify` are gone; email and ntfy content, retries and log lines are unchanged
+- [ ] `Notify` and `build_notify` are gone; email and ntfy content, retries and log lines are unchanged (the ntfy content-build failure log of the second issue aside)
 
 ---
 
