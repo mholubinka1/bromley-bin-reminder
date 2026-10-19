@@ -1,7 +1,7 @@
 from datetime import time
 from unittest.mock import patch
 
-from common.settings import ApplicationSettings
+from common.settings import ApplicationSettings, parse_settings
 from notify import build_notify
 from reminder import schedule_reminder_runs
 from schedule import Scheduler
@@ -11,7 +11,7 @@ LONDON_NAME = "Europe/London"
 
 
 def settings_reminding_at_six_pm_in_london() -> ApplicationSettings:
-    settings = ApplicationSettings(yaml_settings())
+    settings = parse_settings(yaml_settings())
     settings.remind.time = "18:00"
     settings.remind.tz = LONDON_NAME
     return settings

@@ -1,8 +1,8 @@
 import logging.config
-import sys
 from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytz
 import yaml
@@ -56,62 +56,78 @@ def _build_ntfy_settings(ntfy_yaml: dict[str, Any] | None) -> NtfySettings | Non
     )
 
 
+@dataclass
 class ApplicationSettings:
-    def __init__(self, yaml_settings: dict[str, Any]) -> None:
-        self.wasteworks_url = yaml_settings["remind"]["url"]
-        self.remind = RemindSettings(
-            target_emails=yaml_settings["remind"]["email_addresses"],
-            time=yaml_settings["remind"]["time"],
-            tz=yaml_settings["remind"].get("tz", ""),
-        )
-        self.smtp = SMTPSettings(
-            username=yaml_settings["smtp"]["username"],
-            password=yaml_settings["smtp"]["password"],
-            server=yaml_settings["smtp"]["server"],
-            port=yaml_settings["smtp"]["port"],
-        )
-        self.ntfy = _build_ntfy_settings(yaml_settings.get("ntfy"))
+    wasteworks_url: str
+    remind: RemindSettings
+    smtp: SMTPSettings
+    ntfy: NtfySettings | None
+    timezone: ZoneInfo
 
 
-class ConfigLoader:
-    _config: ApplicationSettings
-    _path: str
-
-    def __init__(self, config_path: str) -> None:
-        self._path = config_path
-        self._load_config()
-
-    def get_config(self) -> ApplicationSettings:
-        return self._config
-
-    def _load_config(self) -> None:
-        try:
-            with open(self._path, "r") as file:
-                settings = yaml.safe_load(file)
-            logger.info(f"Successfully loaded settings from {self._path}")
-            self._config = ApplicationSettings(settings)
-        except Exception:
-            logger.exception(f"Failed to load application settings from {self._path}")
-            sys.exit(1)
+def _resolve_timezone(name: str) -> ZoneInfo | None:
+    # The scheduler resolves remind.tz through pytz, and ZoneInfo alone also accepts
+    # names pytz rejects (e.g. "Factory", or a wrong-case name on macOS).
+    if name not in pytz.all_timezones_set:
+        return None
+    return ZoneInfo(name)
 
 
-def validate_settings(settings: ApplicationSettings) -> None:
-    if is_null_or_empty(settings.wasteworks_url):
-        raise RuntimeError("A valid wasteworks URL must be provided.")
-    if is_null_or_empty(settings.remind.time):
+def _poll_time(raw_time: str) -> str:
+    if is_null_or_empty(raw_time):
         logger.warning(
             f"Custom daily poll time not provided, using default: {DEFAULT_DAILY_POLL_TIME}"
         )
-        settings.remind.time = DEFAULT_DAILY_POLL_TIME
-    if is_null_or_empty(settings.remind.tz):
+        return DEFAULT_DAILY_POLL_TIME
+    return raw_time
+
+
+def _timezone(raw_name: str) -> tuple[str, ZoneInfo]:
+    if is_null_or_empty(raw_name):
         logger.warning(f"Custom timezone not provided, using default: {DEFAULT_TZ}")
-        settings.remind.tz = DEFAULT_TZ
-    if settings.remind.tz not in pytz.all_timezones:
-        logger.warning(
-            f"Unrecognised timezone {settings.remind.tz}, using default: {DEFAULT_TZ}"
-        )
-        settings.remind.tz = DEFAULT_TZ
-    if is_null_or_empty(settings.smtp.username):
+        return DEFAULT_TZ, ZoneInfo(DEFAULT_TZ)
+    resolved = _resolve_timezone(raw_name)
+    if resolved is None:
+        logger.warning(f"Unrecognised timezone {raw_name}, using default: {DEFAULT_TZ}")
+        return DEFAULT_TZ, ZoneInfo(DEFAULT_TZ)
+    return raw_name, resolved
+
+
+def parse_settings(raw: dict[str, Any]) -> ApplicationSettings:
+    remind = raw["remind"]
+    smtp = raw["smtp"]
+    wasteworks_url = remind["url"]
+    target_emails = remind["email_addresses"]
+    if is_null_or_empty(wasteworks_url):
+        raise RuntimeError("A valid wasteworks URL must be provided.")
+    poll_time = _poll_time(remind["time"])
+    tz_name, timezone = _timezone(remind.get("tz", ""))
+    if is_null_or_empty(smtp["username"]):
         raise RuntimeError("A valid sender e-mail address must be provided.")
-    if is_null_or_empty(settings.smtp.server) or settings.smtp.port is None:
+    if is_null_or_empty(smtp["server"]) or smtp["port"] is None:
         raise RuntimeError("SMTP server and port configurations must be provided.")
+    return ApplicationSettings(
+        wasteworks_url=wasteworks_url,
+        remind=RemindSettings(target_emails=target_emails, time=poll_time, tz=tz_name),
+        smtp=SMTPSettings(
+            username=smtp["username"],
+            password=smtp["password"],
+            server=smtp["server"],
+            port=smtp["port"],
+        ),
+        ntfy=_build_ntfy_settings(raw.get("ntfy")),
+        timezone=timezone,
+    )
+
+
+def load_settings(path: str) -> ApplicationSettings:
+    try:
+        with open(path, "r") as file:
+            raw = yaml.safe_load(file)
+        settings = parse_settings(raw)
+        logger.info(f"Successfully loaded settings from {path}")
+        return settings
+    except Exception as error:
+        raise RuntimeError(
+            f"Failed to load application settings from {path}"
+        ) from error

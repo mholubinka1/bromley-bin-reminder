@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import requests
-from common.settings import ApplicationSettings
+from common.settings import ApplicationSettings, parse_settings
 from notify import build_notify
 from period import Period
 from reminder import send_reminders
@@ -12,8 +12,8 @@ NTFY_SERVER = "https://ntfy.example.com"
 
 def settings_with_ntfy(ntfy: dict[str, str] | None) -> ApplicationSettings:
     if ntfy is None:
-        return ApplicationSettings(yaml_settings())
-    return ApplicationSettings(yaml_settings(ntfy=ntfy))
+        return parse_settings(yaml_settings())
+    return parse_settings(yaml_settings(ntfy=ntfy))
 
 
 def an_ntfy_configured_application() -> ApplicationSettings:

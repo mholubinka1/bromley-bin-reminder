@@ -5,10 +5,9 @@ from argparse import ArgumentParser, Namespace
 from datetime import datetime
 from logging import Logger, getLogger
 from threading import Thread
-from zoneinfo import ZoneInfo
 
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import ConfigLoader, validate_settings
+from common.settings import load_settings
 from notify import build_notify
 from reload import ConfigChangePoller
 from reminder import schedule_reminder_runs
@@ -32,13 +31,10 @@ def main() -> None:
     try:
         args = parse_args()
         config_file = args.config_file
-        configLoader = ConfigLoader(config_file)
-        settings = configLoader.get_config()
-        validate_settings(settings)
-        tz = ZoneInfo(settings.remind.tz)
+        settings = load_settings(config_file)
 
         def current_time() -> datetime:
-            return datetime.now(tz)
+            return datetime.now(settings.timezone)
 
         web_scraper = WasteworksScraper(
             SeleniumPageSource(), settings.wasteworks_url, current_time

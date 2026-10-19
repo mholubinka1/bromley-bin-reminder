@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from collection import WasteCollection
 from common.logging import APP_LOGGER_NAME
-from common.settings import ApplicationSettings
+from common.settings import parse_settings
 from notify import build_notify
 from period import Period
 from reminder import run_reminder
@@ -34,7 +34,7 @@ def app_log(caplog: pytest.LogCaptureFixture) -> Iterator[pytest.LogCaptureFixtu
 
 def test_tomorrow_run_reminds_only_about_the_bins_collected_tomorrow() -> None:
     # Given ntfy is configured, food waste is collected tomorrow and garden waste later
-    settings = ApplicationSettings(
+    settings = parse_settings(
         yaml_settings(ntfy={"server": NTFY_SERVER, "topic": "a-topic"})
     )
     scraper = FakeScraper(
@@ -71,7 +71,7 @@ def test_tomorrow_run_logs_its_progress_and_the_services_it_reminds_about(
     app_log: pytest.LogCaptureFixture,
 ) -> None:
     # Given food waste is collected tomorrow and garden waste later
-    settings = ApplicationSettings(yaml_settings())
+    settings = parse_settings(yaml_settings())
     scraper = FakeScraper(
         [
             a_collection("Food Waste", day=3),
@@ -101,7 +101,7 @@ def test_tomorrow_run_logs_its_progress_and_the_services_it_reminds_about(
 
 def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> None:
     # Given ntfy is configured and nothing is collected tomorrow
-    settings = ApplicationSettings(
+    settings = parse_settings(
         yaml_settings(ntfy={"server": NTFY_SERVER, "topic": "a-topic"})
     )
     scraper = FakeScraper([a_collection("Garden Waste", day=6)])
@@ -126,7 +126,7 @@ def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> Non
 
 def test_run_reads_the_clock_once() -> None:
     # Given a clock that counts how often it is read and a bin collected tomorrow
-    settings = ApplicationSettings(yaml_settings())
+    settings = parse_settings(yaml_settings())
     scraper = FakeScraper([a_collection("Food Waste", day=3)])
     clock_reads = 0
 
@@ -161,7 +161,7 @@ def test_run_that_cannot_scrape_is_logged_and_sends_nothing(
     period: Period, expected_failure_log: str, app_log: pytest.LogCaptureFixture
 ) -> None:
     # Given the WasteWorks page cannot be scraped
-    settings = ApplicationSettings(yaml_settings())
+    settings = parse_settings(yaml_settings())
 
     # When the reminder run executes
     with (
@@ -188,7 +188,7 @@ def test_week_run_reminds_about_this_weeks_bins_earliest_first(
     app_log: pytest.LogCaptureFixture,
 ) -> None:
     # Given ntfy is configured, and bins are collected this week (listed out of order) and later
-    settings = ApplicationSettings(
+    settings = parse_settings(
         yaml_settings(ntfy={"server": NTFY_SERVER, "topic": "a-topic"})
     )
     scraper = FakeScraper(
@@ -230,7 +230,7 @@ def test_run_whose_scrape_crosses_midnight_selects_for_the_day_after_the_scrape(
 ):
     # Given the run starts on Friday night and the scrape finishes after midnight,
     # with food waste dated Sunday 4th October
-    settings = ApplicationSettings(yaml_settings())
+    settings = parse_settings(yaml_settings())
     time_now = {"now": datetime(2026, 10, 2, 23, 58, tzinfo=LONDON)}
 
     class MidnightCrossingScraper:
