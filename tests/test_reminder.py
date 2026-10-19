@@ -1,5 +1,7 @@
+import logging
 from unittest.mock import patch
 
+import pytest
 import requests
 from common.settings import ApplicationSettings, parse_settings
 from notify import build_channels
@@ -139,6 +141,30 @@ def test_reminder_is_still_pushed_when_the_email_cannot_be_sent() -> None:
         "Food Waste: tomorrow",
         "Garden Waste: tomorrow",
     ]
+
+
+def test_reminder_is_still_emailed_when_the_ntfy_content_cannot_be_built(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given ntfy is configured but its content cannot be built
+    settings = an_ntfy_configured_application()
+    collections = [a_collection("Food Waste", day=3)]
+
+    # When the night-before reminder is sent
+    with (
+        patch("notify.SMTP") as smtp,
+        patch("notify.requests.post") as post,
+        patch("notify.build_ntfy_notifications", side_effect=ValueError("bad")),
+        caplog.at_level(logging.ERROR),
+    ):
+        send_reminders(
+            build_channels(settings), collections, FRIDAY_EVENING, Period.TOMORROW
+        )
+
+    # Then the email still goes out, nothing is pushed and the failure is logged
+    assert smtp.return_value.sendmail.call_count == 1
+    post.assert_not_called()
+    assert "Failed to send tomorrow ntfy reminder." in caplog.text
 
 
 def test_reminder_is_still_emailed_when_ntfy_cannot_be_reached() -> None:

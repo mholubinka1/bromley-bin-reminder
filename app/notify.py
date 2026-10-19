@@ -116,7 +116,12 @@ class NtfyChannel:
     def send(
         self, collections: list[WasteCollection], now: datetime, period: Period
     ) -> None:
-        for notification in build_ntfy_notifications(collections, period):
+        try:
+            notifications = build_ntfy_notifications(collections, period)
+        except Exception:
+            logger.exception(f"Failed to send {period.name.lower()} ntfy reminder.")
+            return
+        for notification in notifications:
             try:
                 self._publish(notification)
             except Exception:
