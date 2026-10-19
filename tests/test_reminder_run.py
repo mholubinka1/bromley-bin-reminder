@@ -1,11 +1,9 @@
 import logging
-from collections.abc import Iterator
 from datetime import datetime
 from unittest.mock import patch
 
 import pytest
 from collection import WasteCollection
-from common.logging import APP_LOGGER_NAME
 from common.settings import parse_settings
 from notify import build_channels
 from period import Period
@@ -21,15 +19,6 @@ from support import (
 )
 
 NTFY_SERVER = "https://ntfy.example.com"
-
-
-@pytest.fixture
-def app_log(caplog: pytest.LogCaptureFixture) -> Iterator[pytest.LogCaptureFixture]:
-    app_logger = logging.getLogger(APP_LOGGER_NAME)
-    app_logger.addHandler(caplog.handler)
-    caplog.set_level(logging.INFO, logger=APP_LOGGER_NAME)
-    yield caplog
-    app_logger.removeHandler(caplog.handler)
 
 
 def test_tomorrow_run_reminds_only_about_the_bins_collected_tomorrow() -> None:
