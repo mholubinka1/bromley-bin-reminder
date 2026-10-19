@@ -1,9 +1,43 @@
 import logging
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
-from common.settings import parse_settings
+import yaml
+from common.settings import load_settings, parse_settings
 from support import yaml_settings as _yaml_settings
+
+
+def test_a_valid_settings_file_is_loaded(tmp_path: Path) -> None:
+    # Given a config file holding valid settings
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.safe_dump(_yaml_settings()))
+
+    # When the settings are loaded from it
+    settings = load_settings(str(config_file))
+
+    # Then the valid settings are returned
+    assert settings.wasteworks_url == "https://example.com/collections"
+    assert settings.smtp.server == "smtp.example.com"
+
+
+def test_a_missing_settings_file_is_reported_with_its_path(tmp_path: Path) -> None:
+    # Given a config path with no file at it
+    config_file = tmp_path / "missing.yaml"
+
+    # When the settings are loaded, then loading fails naming the path
+    with pytest.raises(RuntimeError, match=str(config_file)):
+        load_settings(str(config_file))
+
+
+def test_a_malformed_settings_file_is_reported_with_its_path(tmp_path: Path) -> None:
+    # Given a config file that is not valid YAML
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("remind: [unclosed")
+
+    # When the settings are loaded, then loading fails naming the path
+    with pytest.raises(RuntimeError, match=str(config_file)):
+        load_settings(str(config_file))
 
 
 def test_a_valid_timezone_is_resolved_once_and_its_name_kept() -> None:

@@ -1,5 +1,4 @@
 import logging.config
-import sys
 from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import Any
@@ -119,23 +118,13 @@ def parse_settings(raw: dict[str, Any]) -> ApplicationSettings:
     )
 
 
-class ConfigLoader:
-    _config: ApplicationSettings
-    _path: str
-
-    def __init__(self, config_path: str) -> None:
-        self._path = config_path
-        self._load_config()
-
-    def get_config(self) -> ApplicationSettings:
-        return self._config
-
-    def _load_config(self) -> None:
-        try:
-            with open(self._path, "r") as file:
-                settings = yaml.safe_load(file)
-            logger.info(f"Successfully loaded settings from {self._path}")
-            self._config = parse_settings(settings)
-        except Exception:
-            logger.exception(f"Failed to load application settings from {self._path}")
-            sys.exit(1)
+def load_settings(path: str) -> ApplicationSettings:
+    try:
+        with open(path, "r") as file:
+            raw = yaml.safe_load(file)
+        logger.info(f"Successfully loaded settings from {path}")
+        return parse_settings(raw)
+    except Exception as error:
+        raise RuntimeError(
+            f"Failed to load application settings from {path}"
+        ) from error

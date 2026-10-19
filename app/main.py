@@ -7,7 +7,7 @@ from logging import Logger, getLogger
 from threading import Thread
 
 from common.logging import APP_LOGGER_NAME, config
-from common.settings import ConfigLoader
+from common.settings import load_settings
 from notify import build_notify
 from reload import ConfigChangePoller
 from reminder import schedule_reminder_runs
@@ -31,8 +31,7 @@ def main() -> None:
     try:
         args = parse_args()
         config_file = args.config_file
-        configLoader = ConfigLoader(config_file)
-        settings = configLoader.get_config()
+        settings = load_settings(config_file)
 
         def current_time() -> datetime:
             return datetime.now(settings.timezone)
