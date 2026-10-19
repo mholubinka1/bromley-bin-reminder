@@ -135,20 +135,33 @@ class FailingScraper:
 
 
 def a_wasteworks_page(*services: tuple[str, str | None]) -> str:
-    """Render a WasteWorks page; a None date leaves out the service's "Next collection" row."""
+    """Render a WasteWorks page laid out like the real one.
+
+    Each service sits in its own grid with its heading and its rows. A None date gives a
+    service whose only row is a cost, like the real page's unscheduled services.
+    """
     sections = []
     for service_name, next_collection in services:
-        next_collection_row = (
+        rows = (
+            '<dl class="govuk-summary-list">'
+            "<div><dt>Frequency</dt><dd>Every week</dd></div>"
             f"<div><dt>Next collection</dt><dd>{next_collection}</dd></div>"
+            "<div><dt>Last collection</dt><dd>Friday, 25th September</dd></div>"
+            "</dl>"
             if next_collection is not None
-            else ""
+            else '<dl class="govuk-summary-list"><div><dt>Cost</dt><dd>From £43.00</dd></div></dl>'
         )
         sections.append(
+            '<div class="waste-service-grid">'
+            '<div class="waste-service-grid--service-name">'
             f'<h3 class="govuk-heading-m waste-service-name">{service_name}</h3>'
-            f"<dl><div><dt>Frequency</dt><dd>Every week</dd></div>"
-            f"{next_collection_row}</dl>"
+            f"</div>{rows}</div>"
         )
-    return f"<html><body>{''.join(sections)}</body></html>"
+    return (
+        '<html><body><div class="govuk-grid-row">'
+        f'<div class="govuk-grid-column-two-thirds">{"".join(sections)}</div>'
+        "</div></body></html>"
+    )
 
 
 class FixturePageSource:

@@ -146,6 +146,78 @@ def test_scraper_skips_a_service_without_a_next_collection() -> None:
     assert [c.service_name for c in collections] == ["Food Waste"]
 
 
+def test_scraper_skips_a_service_without_a_next_collection_in_the_middle_of_the_page() -> (
+    None
+):
+    # Given garden waste has no next collection, between food waste and paper
+    page = a_wasteworks_page(
+        ("Food Waste", "Saturday, 3rd October"),
+        ("Garden Waste", None),
+        ("Paper", "Tuesday, 6th October"),
+    )
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the upcoming collections are read
+    collections = scraper.get_upcoming_collections()
+
+    # Then garden waste is skipped and the others keep their own dates
+    assert [(c.service_name, c.next_collection_date) for c in collections] == [
+        ("Food Waste", datetime(2026, 10, 3, tzinfo=LONDON)),
+        ("Paper", datetime(2026, 10, 6, tzinfo=LONDON)),
+    ]
+
+
+def test_scraper_skips_a_service_without_a_next_collection_at_the_start_of_the_page() -> (
+    None
+):
+    # Given garden waste has no next collection and is listed before paper
+    page = a_wasteworks_page(
+        ("Garden Waste", None),
+        ("Paper", "Tuesday, 6th October"),
+    )
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the upcoming collections are read
+    collections = scraper.get_upcoming_collections()
+
+    # Then only paper is returned, with its own date
+    assert [(c.service_name, c.next_collection_date) for c in collections] == [
+        ("Paper", datetime(2026, 10, 6, tzinfo=LONDON)),
+    ]
+
+
+def test_scraper_reads_the_services_in_the_order_the_real_page_lists_them() -> None:
+    # Given the services as WasteWorks lists them: five scheduled, then two without dates
+    page = a_wasteworks_page(
+        ("Mixed Recycling (Cans, Plastics & Glass)", "Friday, 9th October"),
+        ("Paper & Cardboard", "Friday, 16th October"),
+        ("Garden Waste", "Tuesday, 13th October"),
+        ("Non-Recyclable Refuse", "Friday, 16th October"),
+        ("Food Waste", "Friday, 9th October"),
+        ("Bulky waste", None),
+        ("Batteries, small electrical items and textiles", None),
+    )
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the upcoming collections are read
+    collections = scraper.get_upcoming_collections()
+
+    # Then the five scheduled services are returned, each with its own date
+    assert [(c.service_name, c.next_collection_date.day) for c in collections] == [
+        ("Mixed Recycling (Cans, Plastics & Glass)", 9),
+        ("Paper & Cardboard", 16),
+        ("Garden Waste", 13),
+        ("Non-Recyclable Refuse", 16),
+        ("Food Waste", 9),
+    ]
+
+
 def test_scraper_returns_no_collections_for_a_page_without_services() -> None:
     # Given a page listing no services
     scraper = WasteworksScraper(
