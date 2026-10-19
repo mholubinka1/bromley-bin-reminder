@@ -1,5 +1,7 @@
 # Issues: chore/shared-channel-interface
 
+> Work complete — PR ready to merge.
+
 ## The Reminder run sends through a list of Channels
 
 **Blocked by**: None
@@ -19,12 +21,12 @@ signatures, and the ntfy delivery tests exercise the ntfy Channel directly.
 
 ### Acceptance criteria
 
-- [ ] Given ntfy is configured, when a night-before Reminder is sent, then one email goes out and one high priority push per bin
-- [ ] Given ntfy is not configured, when a Reminder is sent, then only the email is sent and `build_channels` returns only the email Channel
-- [ ] Given the email fails, when a Reminder is sent, then the failure is logged as before and the pushes still go out
-- [ ] Given one ntfy notification fails, when the Reminder is sent, then the others are still delivered and the topic is never logged
-- [ ] Given plain fake Channels, when the run sends, then each receives the same collections, clock reading and Period, in order
-- [ ] `Notify` and `build_notify` are gone; email and ntfy content, retries and log lines are unchanged (the ntfy content-build failure log of the second issue aside)
+- [x] Given ntfy is configured, when a night-before Reminder is sent, then one email goes out and one high priority push per bin
+- [x] Given ntfy is not configured, when a Reminder is sent, then only the email is sent and `build_channels` returns only the email Channel
+- [x] Given the email fails, when a Reminder is sent, then the failure is logged as before and the pushes still go out
+- [x] Given one ntfy notification fails, when the Reminder is sent, then the others are still delivered and the topic is never logged
+- [x] Given plain fake Channels, when the run sends, then each receives the same collections, clock reading and Period, in order
+- [x] `Notify` and `build_notify` are gone; email and ntfy content, retries and log lines are unchanged (the ntfy content-build failure log of the second issue aside)
 
 ---
 
@@ -42,6 +44,6 @@ one deliberate behaviour difference of the refactor.
 
 ### Acceptance criteria
 
-- [ ] Given ntfy content cannot be built, when a Reminder is sent, then the failure is logged, no exception propagates, and the email still goes out
+- [x] Given ntfy content cannot be built, when a Reminder is sent, then the failure is logged, no exception propagates, and the email still goes out
 
 ---
