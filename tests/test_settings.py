@@ -1,5 +1,130 @@
-from common.settings import ApplicationSettings
+import logging
+from zoneinfo import ZoneInfo
+
+import pytest
+from common.settings import parse_settings
 from support import yaml_settings as _yaml_settings
+
+
+def test_a_valid_timezone_is_resolved_once_and_its_name_kept() -> None:
+    # Given config yaml with a valid timezone
+    config = _yaml_settings()
+    config["remind"]["tz"] = "America/New_York"
+
+    # When the settings are parsed
+    settings = parse_settings(config)
+
+    # Then the timezone is resolved and its name is kept for the scheduler
+    assert settings.timezone == ZoneInfo("America/New_York")
+    assert settings.remind.tz == "America/New_York"
+
+
+def test_a_blank_poll_time_falls_back_to_the_default_with_a_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given config yaml with a blank poll time
+    config = _yaml_settings()
+    config["remind"]["time"] = " "
+
+    # When the settings are parsed
+    with caplog.at_level(logging.WARNING):
+        settings = parse_settings(config)
+
+    # Then the default poll time is used and the resident is warned
+    assert settings.remind.time == "18:00"
+    assert "Custom daily poll time not provided, using default: 18:00" in caplog.text
+
+
+def test_a_blank_timezone_falls_back_to_london_with_a_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given config yaml with no timezone
+    config = _yaml_settings()
+
+    # When the settings are parsed
+    with caplog.at_level(logging.WARNING):
+        settings = parse_settings(config)
+
+    # Then Europe/London is used and the resident is warned
+    assert settings.remind.tz == "Europe/London"
+    assert settings.timezone == ZoneInfo("Europe/London")
+    assert "Custom timezone not provided, using default: Europe/London" in caplog.text
+
+
+def test_an_unrecognised_timezone_falls_back_to_london_with_a_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given config yaml with a timezone that does not exist
+    config = _yaml_settings()
+    config["remind"]["tz"] = "Mars/Olympus_Mons"
+
+    # When the settings are parsed
+    with caplog.at_level(logging.WARNING):
+        settings = parse_settings(config)
+
+    # Then Europe/London is used and the resident is warned
+    assert settings.remind.tz == "Europe/London"
+    assert settings.timezone == ZoneInfo("Europe/London")
+    assert (
+        "Unrecognised timezone Mars/Olympus_Mons, using default: Europe/London"
+        in caplog.text
+    )
+
+
+def test_a_blank_wasteworks_url_is_rejected() -> None:
+    # Given config yaml with a blank WasteWorks URL
+    config = _yaml_settings()
+    config["remind"]["url"] = " "
+
+    # When the settings are parsed, then they are rejected
+    with pytest.raises(RuntimeError, match="A valid wasteworks URL must be provided."):
+        parse_settings(config)
+
+
+def test_a_blank_smtp_username_is_rejected() -> None:
+    # Given config yaml with a blank SMTP username
+    config = _yaml_settings()
+    config["smtp"]["username"] = ""
+
+    # When the settings are parsed, then they are rejected
+    with pytest.raises(
+        RuntimeError, match="A valid sender e-mail address must be provided."
+    ):
+        parse_settings(config)
+
+
+def test_a_blank_smtp_server_is_rejected() -> None:
+    # Given config yaml with a blank SMTP server
+    config = _yaml_settings()
+    config["smtp"]["server"] = " "
+
+    # When the settings are parsed, then they are rejected
+    with pytest.raises(
+        RuntimeError, match="SMTP server and port configurations must be provided."
+    ):
+        parse_settings(config)
+
+
+def test_a_missing_smtp_port_is_rejected() -> None:
+    # Given config yaml with no SMTP port value
+    config = _yaml_settings()
+    config["smtp"]["port"] = None
+
+    # When the settings are parsed, then they are rejected
+    with pytest.raises(
+        RuntimeError, match="SMTP server and port configurations must be provided."
+    ):
+        parse_settings(config)
+
+
+def test_a_missing_required_key_is_rejected() -> None:
+    # Given config yaml with no smtp block
+    config = _yaml_settings()
+    del config["smtp"]
+
+    # When the settings are parsed, then they are rejected
+    with pytest.raises(KeyError):
+        parse_settings(config)
 
 
 def test_ntfy_is_not_configured_when_the_yaml_has_no_ntfy_block() -> None:
@@ -7,7 +132,7 @@ def test_ntfy_is_not_configured_when_the_yaml_has_no_ntfy_block() -> None:
     config = _yaml_settings()
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then ntfy is not configured
     assert settings.ntfy is None
@@ -18,7 +143,7 @@ def test_ntfy_is_not_configured_when_the_topic_is_blank() -> None:
     config = _yaml_settings(ntfy={"server": "https://ntfy.example.com", "topic": " "})
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then ntfy is not configured
     assert settings.ntfy is None
@@ -29,7 +154,7 @@ def test_ntfy_uses_the_public_server_when_none_is_configured() -> None:
     config = _yaml_settings(ntfy={"topic": "my-bins"})
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then the default ntfy server is used and the topic is preserved
     assert settings.ntfy is not None
@@ -42,7 +167,7 @@ def test_ntfy_topic_is_stripped_of_surrounding_whitespace() -> None:
     config = _yaml_settings(ntfy={"topic": "  my-bins "})
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then the topic is trimmed
     assert settings.ntfy is not None
@@ -54,7 +179,7 @@ def test_ntfy_topic_written_as_a_number_in_yaml_is_accepted() -> None:
     config = _yaml_settings(ntfy={"topic": 12345})
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then the topic is kept as text
     assert settings.ntfy is not None
@@ -66,7 +191,7 @@ def test_ntfy_uses_the_default_server_when_the_server_is_blank() -> None:
     config = _yaml_settings(ntfy={"server": " ", "topic": "my-bins"})
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then the default ntfy server is used
     assert settings.ntfy is not None
@@ -80,7 +205,7 @@ def test_ntfy_server_is_stripped_of_surrounding_whitespace() -> None:
     )
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then the server is trimmed
     assert settings.ntfy is not None
@@ -94,7 +219,7 @@ def test_ntfy_keeps_a_custom_server() -> None:
     )
 
     # When the settings are loaded
-    settings = ApplicationSettings(config)
+    settings = parse_settings(config)
 
     # Then the custom server is preserved
     assert settings.ntfy is not None

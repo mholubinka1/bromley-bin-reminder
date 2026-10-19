@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from collection import WasteCollection
-from common.settings import ApplicationSettings
+from common.settings import parse_settings
 from notify import build_notify
 from period import Period
 from reminder import send_reminders
@@ -18,7 +18,7 @@ from support import (
 def send_email_reminder(
     period: Period, collections: list[WasteCollection]
 ) -> MagicMock:
-    settings = ApplicationSettings(yaml_settings())
+    settings = parse_settings(yaml_settings())
     with patch("notify.SMTP") as smtp:
         send_reminders(
             build_notify(settings),
