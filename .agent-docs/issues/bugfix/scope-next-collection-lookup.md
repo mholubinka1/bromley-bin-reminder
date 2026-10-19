@@ -1,5 +1,7 @@
 # Issues: bugfix/scope-next-collection-lookup
 
+> Work complete — PR ready to merge.
+
 ## Scraper gives a service without a 'Next collection' row the next service's date
 
 **GitHub issue**: #302
@@ -14,11 +16,11 @@ Bound each service's "Next collection" lookup to its own section: walk forward f
 
 ### Acceptance criteria
 
-- [ ] A service in the middle of the page without a "Next collection" row is skipped, and the services around it keep their own dates
-- [ ] A service first on the page without the row is skipped, and the next service keeps its own date
-- [ ] Given the real page's order (five services with a row, then two without), exactly the five are returned with their own dates
-- [ ] The existing Scraper tests pass unchanged (last service without the row, empty page, suffixes, rollover, leap day, malformed dates, render failure)
-- [ ] The test page builder mirrors the real structure, with invented dates and no household data
-- [ ] All tests pass
+- [x] A service in the middle of the page without a "Next collection" row is skipped, and the services around it keep their own dates
+- [x] A service first on the page without the row is skipped, and the next service keeps its own date
+- [x] Given the real page's order (five services with a row, then two without), exactly the five are returned with their own dates
+- [x] The existing Scraper tests pass unchanged (last service without the row, empty page, suffixes, rollover, leap day, malformed dates, render failure)
+- [x] The test page builder mirrors the real structure, with invented dates and no household data
+- [x] All tests pass
 
 ---
