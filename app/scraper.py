@@ -6,7 +6,7 @@ from datetime import datetime
 from logging import Logger, getLogger
 from typing import Protocol
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from collection import WasteCollection
 from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
@@ -17,6 +17,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
+
+NEXT_COLLECTION_LABEL = "Next collection"
 
 
 class ScraperError(Exception):
@@ -86,6 +88,20 @@ def parse_date(date: str, now: datetime) -> datetime:
     return collection_date
 
 
+def find_next_collection_row(service: Tag, following_service: Tag | None) -> Tag | None:
+    """Find the service's own "Next collection" row, never one belonging to a later service."""
+    for element in service.next_elements:
+        if element is following_service:
+            return None
+        if (
+            isinstance(element, Tag)
+            and element.name == "dt"
+            and element.string == NEXT_COLLECTION_LABEL
+        ):
+            return element
+    return None
+
+
 class WasteworksScraper:
     _page_source: PageSource
     _target_url: str
@@ -106,10 +122,11 @@ class WasteworksScraper:
     ) -> list[WasteCollection]:
         logger.info("Extracting upcoming collection information.")
         services = soup.find_all("h3", class_="govuk-heading-m waste-service-name")
+        following_services = [*services[1:], None]
         collections: list[WasteCollection] = []
-        for service in services:
+        for service, following_service in zip(services, following_services):
             service_name = service.get_text(strip=True)
-            next_collection = service.find_next("dt", string="Next collection")  # type: ignore[call-overload]
+            next_collection = find_next_collection_row(service, following_service)
             if next_collection:
                 next_collection_date = parse_date(
                     next_collection.find_next_sibling("dd").get_text(strip=True),
