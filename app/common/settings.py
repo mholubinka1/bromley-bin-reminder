@@ -4,6 +4,7 @@ from logging import Logger, getLogger
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import pytz
 import yaml
 from common.logging import APP_LOGGER_NAME, config
 
@@ -65,6 +66,10 @@ class ApplicationSettings:
 
 
 def _resolve_timezone(name: str) -> ZoneInfo | None:
+    # The scheduler resolves remind.tz through pytz, and ZoneInfo alone also accepts
+    # names pytz rejects (e.g. "Factory", or a wrong-case name on macOS).
+    if name not in pytz.all_timezones_set:
+        return None
     try:
         return ZoneInfo(name)
     except (ZoneInfoNotFoundError, ValueError, OSError):

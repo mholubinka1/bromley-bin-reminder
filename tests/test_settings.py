@@ -102,7 +102,10 @@ def test_a_blank_timezone_falls_back_to_london_with_a_warning(
     assert "Custom timezone not provided, using default: Europe/London" in caplog.text
 
 
-@pytest.mark.parametrize("name", ["Mars/Olympus_Mons", "Europe", "../x"])
+@pytest.mark.parametrize(
+    "name",
+    ["Mars/Olympus_Mons", "Europe", "../x", "posixrules", "Factory", "europe/london"],
+)
 def test_an_unrecognised_timezone_falls_back_to_london_with_a_warning(
     caplog: pytest.LogCaptureFixture, name: str
 ) -> None:

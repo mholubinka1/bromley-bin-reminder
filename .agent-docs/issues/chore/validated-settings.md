@@ -26,7 +26,7 @@ timezone instead of parsing the name again. Tests that built settings directly u
 - [ ] Given a blank URL, blank SMTP username, or missing SMTP server or port, when parsed, then it raises `RuntimeError` with the current message
 - [ ] Given a missing required key, when parsed, then it raises
 - [ ] The existing ntfy rules behave as before
-- [ ] `validate_settings` is gone and the application no longer imports `pytz` (the dependency stays for `schedule`)
+- [ ] `validate_settings` is gone; `pytz` stays (the scheduler uses it, and the timezone check uses its zone list so the two agree)
 
 ---
 

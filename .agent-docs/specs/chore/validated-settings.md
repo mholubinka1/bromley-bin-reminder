@@ -13,8 +13,8 @@ with `zoneinfo` in another.
 
 ## Solution
 
-One call returns settings that are already valid, or raises. The timezone is resolved once,
-with `zoneinfo`, and carried on the settings. Loading never decides what failure means:
+One call returns settings that are already valid, or raises. The timezone is resolved once
+and carried on the settings. Loading never decides what failure means:
 `main()` catches, logs and exits, exactly as it does today for its other startup errors.
 
 Nothing a resident sees changes. Defaults, warnings, validation errors, and the process
@@ -57,9 +57,12 @@ exiting with status 1 on bad configuration are preserved.
 - Validation rules and messages are unchanged: blank URL, blank SMTP username, and missing
   SMTP server or port raise `RuntimeError` with the current texts; a missing required key
   still raises (a `KeyError`).
-- The timezone is validated by attempting `ZoneInfo(name)` rather than membership of
-  `pytz.all_timezones`; a name it rejects takes the unrecognised-timezone path. Names are
-  still taken exactly as written, so valid IANA names behave as before.
+- The timezone is validated against `pytz.all_timezones_set` (the same set as before, and
+  the one the scheduler's lookup uses) and then resolved once with `ZoneInfo(name)`; a name
+  either rejects takes the unrecognised-timezone path. Names are taken exactly as written,
+  so valid IANA names behave as before. `ZoneInfo` alone is not enough: it accepts names
+  such as "Factory" and, on case-insensitive filesystems, wrong-case names, which the
+  scheduler would then fail on.
 - `remind.tz` stays the validated timezone name as a string, because `schedule`'s `.at()`
   takes a name and does its own lookup. `main()` builds its clock from the settings'
   `timezone` instead of parsing the name again. `schedule_reminder_runs` is unchanged.
@@ -68,8 +71,8 @@ exiting with status 1 on bad configuration are preserved.
   "Failed to load application settings from <path>" log and its own exit are removed; the
   path now travels in the exception message. The "Successfully loaded settings" info log is
   kept.
-- `pytz` stays in `pyproject.toml`: `schedule` imports it itself for `.at(time, tz)`. The
-  application code stops importing it.
+- `pytz` stays in `pyproject.toml`: `schedule` imports it itself for `.at(time, tz)`, and
+  the settings keep using its zone list for validation so the two always agree.
 - No schema, config-file, or Channel-contract changes. No ADR.
 
 ## Testing Decisions
