@@ -59,7 +59,7 @@ exiting with status 1 on bad configuration are preserved.
   still raises (a `KeyError`).
 - The timezone is validated against `pytz.all_timezones_set` (the same set as before, and
   the one the scheduler's lookup uses) and then resolved once with `ZoneInfo(name)`; a name
-  either rejects takes the unrecognised-timezone path. Names are taken exactly as written,
+  outside that list takes the unrecognised-timezone path. Names are taken exactly as written,
   so valid IANA names behave as before. `ZoneInfo` alone is not enough: it accepts names
   such as "Factory" and, on case-insensitive filesystems, wrong-case names, which the
   scheduler would then fail on.

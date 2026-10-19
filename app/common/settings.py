@@ -2,7 +2,7 @@ import logging.config
 from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import Any
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from zoneinfo import ZoneInfo
 
 import pytz
 import yaml
@@ -70,10 +70,7 @@ def _resolve_timezone(name: str) -> ZoneInfo | None:
     # names pytz rejects (e.g. "Factory", or a wrong-case name on macOS).
     if name not in pytz.all_timezones_set:
         return None
-    try:
-        return ZoneInfo(name)
-    except (ZoneInfoNotFoundError, ValueError, OSError):
-        return None
+    return ZoneInfo(name)
 
 
 def _poll_time(raw_time: str) -> str:
