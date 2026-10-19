@@ -137,8 +137,8 @@ class FailingScraper:
 def a_wasteworks_page(*services: tuple[str, str | None]) -> str:
     """Render a WasteWorks page laid out like the real one.
 
-    Each service sits in its own grid with its heading and, when it has a date, its rows. A
-    None date gives a service with no rows at all (like the real page's unscheduled services).
+    Each service sits in its own grid with its heading and its rows. A None date gives a
+    service whose only row is a cost, like the real page's unscheduled services.
     """
     sections = []
     for service_name, next_collection in services:
@@ -149,7 +149,7 @@ def a_wasteworks_page(*services: tuple[str, str | None]) -> str:
             "<div><dt>Last collection</dt><dd>Friday, 25th September</dd></div>"
             "</dl>"
             if next_collection is not None
-            else "<p>Please present one small bag each week.</p>"
+            else '<dl class="govuk-summary-list"><div><dt>Cost</dt><dd>From £43.00</dd></div></dl>'
         )
         sections.append(
             '<div class="waste-service-grid">'
