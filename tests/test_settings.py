@@ -21,6 +21,23 @@ def test_a_valid_settings_file_is_loaded(tmp_path: Path) -> None:
     assert settings.smtp.server == "smtp.example.com"
 
 
+def test_a_file_that_fails_validation_is_not_reported_as_loaded(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    # Given a config file whose settings are invalid
+    invalid = _yaml_settings()
+    invalid["remind"]["url"] = ""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.safe_dump(invalid))
+
+    # When the settings are loaded
+    with caplog.at_level(logging.INFO), pytest.raises(RuntimeError):
+        load_settings(str(config_file))
+
+    # Then no success is logged
+    assert "Successfully loaded settings" not in caplog.text
+
+
 def test_a_missing_settings_file_is_reported_with_its_path(tmp_path: Path) -> None:
     # Given a config path with no file at it
     config_file = tmp_path / "missing.yaml"
@@ -85,12 +102,13 @@ def test_a_blank_timezone_falls_back_to_london_with_a_warning(
     assert "Custom timezone not provided, using default: Europe/London" in caplog.text
 
 
+@pytest.mark.parametrize("name", ["Mars/Olympus_Mons", "Europe", "../x"])
 def test_an_unrecognised_timezone_falls_back_to_london_with_a_warning(
-    caplog: pytest.LogCaptureFixture,
+    caplog: pytest.LogCaptureFixture, name: str
 ) -> None:
-    # Given config yaml with a timezone that does not exist
+    # Given config yaml with a timezone that is not a zone name
     config = _yaml_settings()
-    config["remind"]["tz"] = "Mars/Olympus_Mons"
+    config["remind"]["tz"] = name
 
     # When the settings are parsed
     with caplog.at_level(logging.WARNING):
@@ -99,10 +117,7 @@ def test_an_unrecognised_timezone_falls_back_to_london_with_a_warning(
     # Then Europe/London is used and the resident is warned
     assert settings.remind.tz == "Europe/London"
     assert settings.timezone == ZoneInfo("Europe/London")
-    assert (
-        "Unrecognised timezone Mars/Olympus_Mons, using default: Europe/London"
-        in caplog.text
-    )
+    assert f"Unrecognised timezone {name}, using default: Europe/London" in caplog.text
 
 
 def test_a_blank_wasteworks_url_is_rejected() -> None:

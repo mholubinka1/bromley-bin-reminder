@@ -122,8 +122,9 @@ def load_settings(path: str) -> ApplicationSettings:
     try:
         with open(path, "r") as file:
             raw = yaml.safe_load(file)
+        settings = parse_settings(raw)
         logger.info(f"Successfully loaded settings from {path}")
-        return parse_settings(raw)
+        return settings
     except Exception as error:
         raise RuntimeError(
             f"Failed to load application settings from {path}"
