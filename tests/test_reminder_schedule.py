@@ -2,7 +2,7 @@ from datetime import time
 from unittest.mock import patch
 
 from common.settings import ApplicationSettings, parse_settings
-from notify import build_notify
+from notify import build_channels
 from reminder import schedule_reminder_runs
 from schedule import Scheduler
 from support import FRIDAY_EVENING, FakeScraper, a_collection, sent_email, yaml_settings
@@ -28,7 +28,7 @@ def test_reminder_runs_are_scheduled_daily_and_on_sundays_at_the_reminder_time()
     schedule_reminder_runs(
         scheduler,
         FakeScraper([]),
-        build_notify(settings),
+        build_channels(settings),
         settings,
         clock=lambda: FRIDAY_EVENING,
     )
@@ -59,7 +59,7 @@ def test_scheduled_runs_remind_about_their_own_period_using_the_clock() -> None:
     schedule_reminder_runs(
         scheduler,
         scraper,
-        build_notify(settings),
+        build_channels(settings),
         settings,
         clock=lambda: FRIDAY_EVENING,
     )

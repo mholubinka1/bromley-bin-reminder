@@ -7,8 +7,7 @@ from typing import Protocol
 from collection import WasteCollection
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import ApplicationSettings
-from notification import WasteCollectionNotification, build_ntfy_notifications
-from notify import Notify
+from notify import Channel
 from period import Period
 from schedule import Scheduler
 
@@ -23,8 +22,7 @@ class CollectionSource(Protocol):
 def run_reminder(
     period: Period,
     scraper: CollectionSource,
-    notify: Notify,
-    settings: ApplicationSettings,
+    channels: list[Channel],
     clock: Callable[[], datetime],
 ) -> None:
     period_name = period.name.title()
@@ -38,7 +36,7 @@ def run_reminder(
             services = ", ".join(c.service_name for c in selected)
             logger.info(f"{period.collections_label}: [{services}]")
             logger.info(f"Sending reminders for {period.collections_label.lower()}.")
-            send_reminders(notify, settings, selected, now, period)
+            send_reminders(channels, selected, now, period)
     except Exception:
         logger.exception(f"{period_name} reminder run failed.")
 
@@ -46,12 +44,12 @@ def run_reminder(
 def schedule_reminder_runs(
     scheduler: Scheduler,
     scraper: CollectionSource,
-    notify: Notify,
+    channels: list[Channel],
     settings: ApplicationSettings,
     clock: Callable[[], datetime],
 ) -> None:
     remind = settings.remind
-    run_args = (scraper, notify, settings, clock)
+    run_args = (scraper, channels, clock)
     scheduler.every().day.at(remind.time, remind.tz).do(
         run_reminder, Period.TOMORROW, *run_args
     )
@@ -61,17 +59,10 @@ def schedule_reminder_runs(
 
 
 def send_reminders(
-    notify: Notify,
-    settings: ApplicationSettings,
+    channels: list[Channel],
     collections: list[WasteCollection],
     now: datetime,
     period: Period,
 ) -> None:
-    try:
-        notification = WasteCollectionNotification(collections, now, period)
-        notify.send_email(
-            notification, settings.smtp.username, settings.remind.target_emails
-        )
-    except Exception:
-        logger.exception(f"Failed to send {period.name.lower()} email reminder.")
-    notify.send_ntfy(build_ntfy_notifications(collections, period))
+    for channel in channels:
+        channel.send(collections, now, period)
