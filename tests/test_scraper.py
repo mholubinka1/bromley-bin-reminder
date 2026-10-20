@@ -388,6 +388,42 @@ def test_scraper_logs_a_warning_and_finds_nothing_when_the_renewal_cannot_be_rea
     assert "Could not read the Garden Waste renewal" in caplog.text
 
 
+def test_scraper_logs_a_warning_when_only_the_subscription_row_is_missing(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given a Garden Waste section with a Renewal row but no Subscription row
+    page = a_garden_waste_page(renewal="12 June 2027", subscription=None)
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    with caplog.at_level(logging.WARNING):
+        subscription = scraper.get_garden_waste_subscription()
+
+    # Then there is none and the problem is logged
+    assert subscription is None
+    assert "Could not read the Garden Waste renewal" in caplog.text
+
+
+def test_scraper_quietly_finds_no_subscription_in_a_garden_waste_section_with_only_a_cost(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given a Garden Waste section that shows only a cost, like an unsubscribed service
+    page = a_wasteworks_page(("Garden Waste", None))
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    with caplog.at_level(logging.WARNING):
+        subscription = scraper.get_garden_waste_subscription()
+
+    # Then there is none and nothing is logged as a problem
+    assert subscription is None
+    assert caplog.text == ""
+
+
 def test_scraper_finds_no_subscription_without_a_garden_waste_section() -> None:
     # Given a page listing only food waste
     page = a_wasteworks_page(("Food Waste", "Saturday, 3rd October"))

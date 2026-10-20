@@ -87,7 +87,7 @@ def build_renewal_ntfy_notification(
             title=f"{GARDEN_WASTE_SERVICE_NAME}: subscription overdue",
             message=(
                 f"Subscription was due for renewal on {renewal_date} ({text}). "
-                "Renew it to keep your garden bins collected."
+                "Please check it has been renewed and paid."
             ),
             priority=OVERDUE_NTFY_PRIORITY,
             tags=[emoji_tag(GARDEN_WASTE_SERVICE_NAME)],
@@ -113,8 +113,7 @@ def build_renewal_email(
     subject = OVERDUE_EMAIL_SUBJECT if overdue else RENEWAL_EMAIL_SUBJECT
     statement = (
         f"Your Garden Waste subscription was due for renewal on {renewal_date} "
-        "and is now overdue. Garden Waste collections will not continue until "
-        "it is renewed."
+        "and is now overdue. Please check it has been renewed and paid."
         if overdue
         else f"Your Garden Waste subscription is due for renewal on {renewal_date}."
     )

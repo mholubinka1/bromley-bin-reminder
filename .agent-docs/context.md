@@ -25,7 +25,7 @@ The span a Reminder covers: Tomorrow (the nightly Reminder) or Week (the weekly 
 _Avoid_: schedule, frequency, mode
 
 **Garden Waste subscription**:
-The resident's paid subscription to the Garden Waste Service, shown on the WasteWorks page by its Subscription row (price and bin count) and Renewal row (a date, which may carry a note such as "soon due for renewal", "subscription overdue" or "Cancellation in progress"), plus a sentence saying when it renews automatically by direct debit. A household without one has no Garden Waste section at all. Modelled by the `GardenWasteSubscription` value.
+The resident's paid subscription to the Garden Waste Service, with a price, a Renewal date, and whether it renews automatically by direct debit. A household without one has no Garden Waste section on the WasteWorks page. Modelled by the `GardenWasteSubscription` value.
 _Avoid_: garden bin plan, membership
 
 **Renewal notice**:

@@ -40,7 +40,7 @@ def run_reminder(
             send_reminders(channels, selected, now, period)
     except Exception:
         logger.exception(f"{period_name} reminder run failed.")
-    if period.checks_garden_waste_subscription:
+    if period is Period.WEEK:
         try:
             send_renewal_notice_if_due(scraper, channels, clock)
         except Exception:

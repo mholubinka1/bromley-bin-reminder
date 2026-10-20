@@ -124,6 +124,10 @@ def test_overdue_notice_email_says_the_subscription_is_overdue() -> None:
     assert "£80.00 per year (1 bin)" in body
     assert "automatically" not in body
 
+    # And it asks the resident to check, without claiming what will happen
+    assert "check it has been renewed and paid" in body
+    assert "will not continue" not in body
+
 
 def test_overdue_notice_ntfy_push_has_a_higher_priority_than_a_due_notice() -> None:
     # Given the ntfy Channel
@@ -138,6 +142,7 @@ def test_overdue_notice_ntfy_push_has_a_higher_priority_than_a_due_notice() -> N
     overdue, due = (call.kwargs["json"] for call in post.call_args_list)
     assert overdue["title"] == "Garden Waste: subscription overdue"
     assert "12 June 2027" in overdue["message"]
+    assert "check it has been renewed and paid" in overdue["message"]
     assert overdue["priority"] > due["priority"]
 
 

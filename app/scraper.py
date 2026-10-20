@@ -116,7 +116,13 @@ def find_service_row(
 def section_text(service: Tag) -> str:
     """All the text of the service's own section on the page, whitespace-normalised."""
     section = service.find_parent("div", class_="waste-service-grid")
-    return " ".join(section.get_text().split()) if section else ""
+    if section is None:
+        logger.warning(
+            f"Could not find the section of {service.get_text(strip=True)}; "
+            "notes such as a pending subscription may be missed."
+        )
+        return ""
+    return " ".join(section.get_text().split())
 
 
 def row_text(row: Tag) -> str:
@@ -187,6 +193,8 @@ class WasteworksScraper:
         subscription_row = find_service_row(
             service, following_service, SUBSCRIPTION_LABEL
         )
+        if renewal_row is None and subscription_row is None:
+            return None  # no subscription rows: not subscribed, nothing to warn about
         if renewal_row is None or subscription_row is None:
             logger.warning(
                 "Could not read the Garden Waste renewal: the Subscription or "
@@ -205,9 +213,7 @@ class WasteworksScraper:
             renewal_date=renewal_date,
             subscription_text=row_text(subscription_row),
             renews_automatically=RENEWS_AUTOMATICALLY_TEXT in text,
-            in_progress=any(
-                marker in f"{renewal_text} {text}" for marker in IN_PROGRESS_TEXTS
-            ),
+            in_progress=any(marker in text for marker in IN_PROGRESS_TEXTS),
         )
 
     def _parse_renewal_date(self, renewal_text: str) -> datetime | None:
