@@ -52,8 +52,8 @@ def send_renewal_notice_if_due(
     channels: list[Channel],
     clock: Callable[[], datetime],
 ) -> None:
-    now = clock()
     subscription = scraper.get_garden_waste_subscription()
+    now = clock()  # after the read, as for collections: it may have crossed midnight
     if subscription is not None and subscription.renewal_notice_due(now):
         logger.info("Sending Garden Waste renewal notice.")
         for channel in channels:

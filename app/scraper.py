@@ -114,16 +114,10 @@ def find_service_row(
     return None
 
 
-def section_text(service: Tag) -> str:
-    """All the text of the service's own section on the page, whitespace-normalised."""
+def section_text(service: Tag) -> str | None:
+    """All the text of the service's own section, whitespace-normalised; None if unknown."""
     section = service.find_parent("div", class_="waste-service-grid")
-    if section is None:
-        logger.warning(
-            f"Could not find the section of {service.get_text(strip=True)}; "
-            "a pending subscription or cancellation will not be detected."
-        )
-        return ""
-    return " ".join(section.get_text().split())
+    return " ".join(section.get_text().split()) if section else None
 
 
 def row_text(row: Tag) -> str:
@@ -209,7 +203,14 @@ class WasteworksScraper:
                 f"Could not read the Garden Waste renewal: no date in [{renewal_text}]."
             )
             return None
-        text = section_text(service).lower()
+        text = section_text(service)
+        if text is None:
+            logger.warning(
+                "Could not read the Garden Waste section: without it a pending "
+                "subscription or cancellation cannot be ruled out."
+            )
+            return None
+        text = text.lower()
         return GardenWasteSubscription(
             renewal_date=renewal_date,
             subscription_text=row_text(subscription_row),

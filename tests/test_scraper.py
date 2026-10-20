@@ -440,7 +440,7 @@ def test_scraper_reads_the_date_of_an_overdue_subscription() -> None:
     assert subscription.renewal_date == datetime(2027, 6, 12, tzinfo=LONDON)
 
 
-def test_scraper_warns_and_misses_an_in_progress_note_when_the_section_container_is_missing(
+def test_scraper_warns_and_finds_nothing_when_the_section_container_is_missing(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given a Garden Waste heading outside any section container, with a pending note
@@ -459,10 +459,9 @@ def test_scraper_warns_and_misses_an_in_progress_note_when_the_section_container
     with caplog.at_level(logging.WARNING):
         subscription = scraper.get_garden_waste_subscription()
 
-    # Then the date is read, the note is missed, and the warning says so
-    assert subscription is not None
-    assert not subscription.in_progress
-    assert "will not be detected" in caplog.text
+    # Then the status cannot be trusted, so there is none and the problem is logged
+    assert subscription is None
+    assert "Could not read the Garden Waste section" in caplog.text
 
 
 def test_scraper_quietly_finds_no_subscription_in_a_garden_waste_section_with_only_a_cost(

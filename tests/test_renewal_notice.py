@@ -1,10 +1,16 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from collection import WasteCollection
 from period import Period
 from reminder import run_reminder
 from subscription import GardenWasteSubscription
-from support import FRIDAY_EVENING, FakeScraper, RecordingChannel, a_collection
+from support import (
+    FRIDAY_EVENING,
+    LONDON,
+    FakeScraper,
+    RecordingChannel,
+    a_collection,
+)
 
 SUBSCRIPTION_TEXT = "£80.00 per year (1 bin)"
 
@@ -151,6 +157,35 @@ def test_sunday_run_sends_a_renewal_notice_when_the_subscription_is_overdue() ->
 
     # Then the renewal notice is sent
     assert channel.renewals == [(subscription, FRIDAY_EVENING)]
+
+
+def test_renewal_notice_is_judged_on_the_day_after_the_subscription_read_finished() -> (
+    None
+):
+    # Given a subscription 31 days from just before midnight, and a read that crosses midnight
+    clock_now = {"now": datetime(2026, 10, 2, 23, 58, tzinfo=LONDON)}
+    subscription = GardenWasteSubscription(
+        renewal_date=datetime(2026, 11, 2, tzinfo=LONDON),
+        subscription_text=SUBSCRIPTION_TEXT,
+    )
+
+    class MidnightCrossingScraper(FakeScraper):
+        def get_garden_waste_subscription(self) -> GardenWasteSubscription:
+            clock_now["now"] = datetime(2026, 10, 3, 0, 3, tzinfo=LONDON)
+            return subscription
+
+    channel = RecordingChannel("only", [])
+
+    # When the Sunday (Week) run happens
+    run_reminder(
+        Period.WEEK,
+        MidnightCrossingScraper([]),
+        [channel],
+        clock=lambda: clock_now["now"],
+    )
+
+    # Then the notice is sent, judged on the day after the read finished
+    assert channel.renewals == [(subscription, clock_now["now"])]
 
 
 def test_tomorrow_run_sends_no_renewal_notice() -> None:

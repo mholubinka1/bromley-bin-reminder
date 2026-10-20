@@ -1,3 +1,4 @@
+import email
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -103,6 +104,25 @@ def test_renewal_notice_ntfy_push_reassures_and_has_no_reassurance_when_manual()
     automatic, manual = (call.kwargs["json"]["message"] for call in post.call_args_list)
     assert "renews automatically by direct debit" in automatic
     assert "automatically" not in manual
+
+
+def test_an_email_retried_after_a_failure_has_each_header_once() -> None:
+    # Given the e-mail Channel and an SMTP server that fails once and then accepts
+    channel = build_channels(parse_settings(yaml_settings()))[0]
+
+    # When the renewal notice is sent
+    with (
+        patch("notify.SMTP") as smtp,
+        patch("common.decorators.time.sleep"),
+    ):
+        smtp.return_value.sendmail.side_effect = [OSError("smtp down"), None]
+        channel.send_renewal(SUBSCRIPTION, FRIDAY_EVENING)
+
+    # Then the message that was delivered has a single From and a single To
+    assert smtp.return_value.sendmail.call_count == 2
+    delivered = email.message_from_string(smtp.return_value.sendmail.call_args.args[2])
+    assert delivered.get_all("From") == ["bins@example.com"]
+    assert delivered.get_all("To") == ["resident@example.com"]
 
 
 OVERDUE_AT = datetime(2027, 6, 20, 18, 0, tzinfo=LONDON)

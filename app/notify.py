@@ -124,8 +124,11 @@ class EmailChannel:
 
     @retry()
     def _send_email(self, msg: MIMEMultipart, sent_log_template: str) -> None:
-        msg["From"] = self._sender
         recipients = ", ".join(self._email_addresses)
+        # setting a header appends, and a retry reuses the message: replace, don't repeat
+        del msg["From"]
+        del msg["To"]
+        msg["From"] = self._sender
         msg["To"] = recipients
         self._client.send_mail(self._sender, self._email_addresses, message=msg)
         logger.info(sent_log_template.format(recipients=recipients))
