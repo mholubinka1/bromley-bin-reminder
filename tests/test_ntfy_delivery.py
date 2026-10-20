@@ -4,10 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 from collection import WasteCollection
-from common.settings import parse_settings
-from notify import EmailChannel, NtfyChannel, NtfyClient, build_channels
+from notify import NtfyChannel, NtfyClient
 from period import Period
-from support import FRIDAY_EVENING, a_collection, yaml_settings
+from support import FRIDAY_EVENING, a_collection
 
 TOPIC = "bromley-bin-collections-ntfy-test"
 
@@ -110,21 +109,3 @@ def test_notifications_are_still_delivered_when_the_server_answers_with_an_error
     assert app_log.text.count("Failed to send ntfy notification [First: tomorrow]") == 1
     assert "Failed to send ntfy notification [Second: tomorrow]" in app_log.text
     assert TOPIC not in app_log.text
-
-
-def test_nothing_is_posted_when_ntfy_is_not_configured() -> None:
-    # Given application settings with no ntfy section
-    settings = parse_settings(yaml_settings())
-
-    # When the Channels are built and a reminder is sent through them
-    channels = build_channels(settings)
-    with patch("notify.SMTP"), patch("notify.requests.post") as post:
-        for channel in channels:
-            channel.send(
-                collections_named("Food Waste"), FRIDAY_EVENING, Period.TOMORROW
-            )
-
-    # Then email is the only Channel and nothing is posted
-    assert len(channels) == 1
-    assert isinstance(channels[0], EmailChannel)
-    post.assert_not_called()

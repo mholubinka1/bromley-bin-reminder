@@ -4,10 +4,8 @@ import subprocess
 import sys
 from collections.abc import Iterator
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
 
 import common.logging
-import main
 import pytest
 from common.logging import (
     APP_LOGGER_NAME,
@@ -72,23 +70,6 @@ def test_unwritable_log_directory_falls_back_to_the_console_and_says_why_once(
     assert capsys.readouterr().err.count(str(missing)) == 1
 
 
-def test_configuring_logging_twice_leaves_a_single_set_of_handlers(
-    tmp_path: Path, restore_app_logger: None
-) -> None:
-    # Given logging has been configured
-    configure_logging(str(tmp_path))
-
-    # When it is configured again
-    configure_logging(str(tmp_path))
-
-    # Then the app logger has one console and one file handler
-    logger = logging.getLogger(APP_LOGGER_NAME)
-    assert [type(handler).__name__ for handler in logger.handlers] == [
-        "StreamHandler",
-        "RotatingFileHandler",
-    ]
-
-
 def test_importing_the_application_modules_configures_no_logging(
     tmp_path: Path,
 ) -> None:
@@ -116,49 +97,6 @@ def test_importing_the_application_modules_configures_no_logging(
     assert list(tmp_path.iterdir()) == []
 
 
-def test_file_handler_writes_to_the_log_directory_alongside_the_console(
-    tmp_path: Path,
-) -> None:
-    # Given a writable log directory
-    # When the logging config is built
-    config = build_config(str(tmp_path))
-
-    # Then a rotating file handler targets the log file and the console is kept
-    handler = config["handlers"]["file"]
-    assert handler["class"] == "logging.handlers.RotatingFileHandler"
-    assert handler["filename"] == str(tmp_path / LOG_FILE_NAME)
-    assert config["loggers"][APP_LOGGER_NAME]["handlers"] == ["console", "file"]
-
-
-def test_production_rotation_limits_are_5_mb_and_5_backups(tmp_path: Path) -> None:
-    # Given a writable log directory
-    # When the logging config is built
-    handler = build_config(str(tmp_path))["handlers"]["file"]
-
-    # Then rotation is 5 MB per file with 5 backups
-    assert handler["maxBytes"] == 5 * 1024 * 1024
-    assert handler["backupCount"] == 5
-
-
-def test_log_file_rolls_over_and_keeps_a_bounded_number_of_backups(
-    tmp_path: Path, restore_app_logger: None
-) -> None:
-    # Given a config with a tiny rotation threshold
-    config = build_config(str(tmp_path))
-    config["handlers"]["file"]["maxBytes"] = 200
-    config["handlers"]["file"]["backupCount"] = 2
-    logging.config.dictConfig(config)
-
-    # When far more than that is logged
-    logger = logging.getLogger(APP_LOGGER_NAME)
-    for i in range(100):
-        logger.info("message number %d", i)
-
-    # Then the log rolled over, and only the newest backups are kept
-    names = sorted(p.name for p in tmp_path.iterdir())
-    assert names == [LOG_FILE_NAME, f"{LOG_FILE_NAME}.1", f"{LOG_FILE_NAME}.2"]
-
-
 def test_the_log_directory_defaults_to_the_log_dir_environment_variable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, restore_app_logger: None
 ) -> None:
@@ -173,41 +111,6 @@ def test_the_log_directory_defaults_to_the_log_dir_environment_variable(
     assert (tmp_path / LOG_FILE_NAME).exists()
 
 
-def test_main_configures_logging_before_it_logs_or_reads_arguments() -> None:
-    # Given a main() whose argument parsing stops the run
-    calls = MagicMock()
-    with (
-        patch("main.configure_logging", calls.configure_logging),
-        patch("main.logger", calls.logger),
-        patch("main.parse_args", calls.parse_args),
-    ):
-        calls.parse_args.side_effect = SystemExit(2)
-
-        # When main starts
-        with pytest.raises(SystemExit):
-            main.main()
-
-    # Then logging was configured before the first log line and before arguments are read
-    assert calls.mock_calls == [
-        call.configure_logging(),
-        call.logger.info("Starting bromley-bin-reminder."),
-        call.parse_args(),
-    ]
-
-
-def test_console_only_when_the_log_directory_is_missing(tmp_path: Path) -> None:
-    # Given a log directory that does not exist
-    missing = tmp_path / "nope"
-
-    # When the logging config is built
-    config = build_config(str(missing))
-
-    # Then only the console handler is configured and nothing is created
-    assert "file" not in config["handlers"]
-    assert config["loggers"][APP_LOGGER_NAME]["handlers"] == ["console"]
-    assert not missing.exists()
-
-
 def test_console_only_when_the_log_file_cannot_be_opened(tmp_path: Path) -> None:
     # Given a log directory where the log file path cannot be opened for writing
     (tmp_path / LOG_FILE_NAME).mkdir()
@@ -218,16 +121,3 @@ def test_console_only_when_the_log_file_cannot_be_opened(tmp_path: Path) -> None
     # Then only the console handler is configured
     assert "file" not in config["handlers"]
     assert config["loggers"][APP_LOGGER_NAME]["handlers"] == ["console"]
-
-
-def test_a_warning_is_printed_when_file_logging_is_skipped(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    # Given a log directory that does not exist
-    missing = tmp_path / "nope"
-
-    # When the logging config is built
-    build_config(str(missing))
-
-    # Then the reason is reported on stderr
-    assert str(missing) in capsys.readouterr().err

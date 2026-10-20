@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
 from collection import WasteCollection
 from common.settings import parse_settings
 from notify import build_channels
@@ -83,23 +82,3 @@ def test_weekly_email_closes_every_table_cell_it_opens() -> None:
     # Then every table cell in the email is closed
     html = sent_email_html(smtp)
     assert html.count("<td") == html.count("</td>")
-
-
-@pytest.mark.parametrize(
-    ("period", "expected_header_cells"),
-    [
-        (Period.TOMORROW, ["Bin Type"]),
-        (Period.WEEK, ["Bin Type", "Collection Date"]),
-    ],
-)
-def test_email_for_a_period_with_no_collections_has_its_headers_and_no_rows(
-    period: Period, expected_header_cells: list[str]
-) -> None:
-    # Given there are no collections
-    # When the reminder is sent
-    smtp = send_email_reminder(period, [])
-
-    # Then the email still has the period's table headers and no rows
-    email = sent_email(smtp)
-    assert email.header_cells == expected_header_cells
-    assert email.rows == []

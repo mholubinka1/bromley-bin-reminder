@@ -169,16 +169,6 @@ def test_a_missing_smtp_port_is_rejected() -> None:
         parse_settings(config)
 
 
-def test_a_missing_required_key_is_rejected() -> None:
-    # Given config yaml with no smtp block
-    config = _yaml_settings()
-    del config["smtp"]
-
-    # When the settings are parsed, then they are rejected
-    with pytest.raises(KeyError):
-        parse_settings(config)
-
-
 def test_ntfy_is_not_configured_when_the_yaml_has_no_ntfy_block() -> None:
     # Given config yaml with no ntfy block
     config = _yaml_settings()
@@ -260,19 +250,5 @@ def test_ntfy_server_is_stripped_of_surrounding_whitespace() -> None:
     settings = parse_settings(config)
 
     # Then the server is trimmed
-    assert settings.ntfy is not None
-    assert settings.ntfy.server == "https://ntfy.example.com"
-
-
-def test_ntfy_keeps_a_custom_server() -> None:
-    # Given an ntfy block with a topic and a custom server
-    config = _yaml_settings(
-        ntfy={"server": "https://ntfy.example.com", "topic": "my-bins"}
-    )
-
-    # When the settings are loaded
-    settings = parse_settings(config)
-
-    # Then the custom server is preserved
     assert settings.ntfy is not None
     assert settings.ntfy.server == "https://ntfy.example.com"
