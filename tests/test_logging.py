@@ -4,8 +4,10 @@ import subprocess
 import sys
 from collections.abc import Iterator
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import common.logging
+import main
 import pytest
 from common.logging import (
     APP_LOGGER_NAME,
@@ -157,19 +159,21 @@ def test_log_file_rolls_over_and_keeps_a_bounded_number_of_backups(
     assert names == [LOG_FILE_NAME, f"{LOG_FILE_NAME}.1", f"{LOG_FILE_NAME}.2"]
 
 
-def test_messages_are_written_to_the_log_file(
-    tmp_path: Path, restore_app_logger: None
-) -> None:
-    # Given logging configured against a writable directory
-    logging.config.dictConfig(build_config(str(tmp_path)))
+def test_main_configures_logging_before_it_logs_or_reads_arguments() -> None:
+    # Given a main() whose argument parsing stops the run
+    calls = MagicMock()
+    with (
+        patch("main.configure_logging", calls.configure_logging),
+        patch("main.parse_args", calls.parse_args),
+    ):
+        calls.parse_args.side_effect = SystemExit(2)
 
-    # When the app logger logs a message
-    logging.getLogger(APP_LOGGER_NAME).info("hello bins")
-    for handler in logging.getLogger(APP_LOGGER_NAME).handlers:
-        handler.flush()
+        # When main starts
+        with pytest.raises(SystemExit):
+            main.main()
 
-    # Then it appears in the log file
-    assert "hello bins" in (tmp_path / LOG_FILE_NAME).read_text()
+    # Then logging was configured before anything else ran
+    assert [call[0] for call in calls.mock_calls] == ["configure_logging", "parse_args"]
 
 
 def test_console_only_when_the_log_directory_is_missing(tmp_path: Path) -> None:

@@ -67,7 +67,8 @@ with its message, and log lines.
 - Other tests read logs with `caplog`. The `app_log` fixture shrinks to setting the app
   logger's level and returning `caplog` (no handler attach), and the ntfy delivery tests'
   private `captured_app_logs` context manager is replaced by it.
-- Not unit tested, as before: `main()` calling `configure_logging()` first.
+- `main()` calling `configure_logging()` before it logs or reads arguments is pinned by one
+  wiring test, since import-time configuration no longer guarantees it.
 - Prior art: `tests/test_logging.py`, `tests/conftest.py`.
 
 ## Out of Scope
@@ -81,6 +82,6 @@ with its message, and log lines.
 - Origin: architecture review candidate #6, the last of the list, building on the earlier
   refactors (Period #288, Reminder run #294, Page source #299, validated settings #307,
   Channels #311).
-- The brief said the fallback message printed repeatedly; it prints once per process
-  because the configuration is built once at import. The real cost of the current design is
+- The brief said the fallback message printed repeatedly; it printed once per process
+  because the configuration was built once at import. The real cost of the old design was
   the repeated `dictConfig` (re-opening the log file) and the import-time side effects.
