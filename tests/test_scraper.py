@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 import pytest
@@ -317,6 +318,74 @@ def test_scraper_reads_that_the_subscription_does_not_renew_automatically() -> N
     # Then it does not renew automatically
     assert subscription is not None
     assert not subscription.renews_automatically
+
+
+@pytest.mark.parametrize(
+    ("renewal", "status"),
+    [
+        ("12 June 2027 Cancellation in progress", ""),
+        (
+            "12 June 2027, soon due for renewal.",
+            "This property has a pending garden subscription.",
+        ),
+        (
+            "12 June 2027, soon due for renewal.",
+            "This property has a pending direct debit subscription.",
+        ),
+    ],
+)
+def test_scraper_reads_that_a_cancellation_or_new_subscription_is_in_progress(
+    renewal: str, status: str
+) -> None:
+    # Given a Garden Waste section showing a cancellation or pending subscription
+    page = a_garden_waste_page(renewal=renewal, status=status)
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then it is in progress, and the date is still read
+    assert subscription is not None
+    assert subscription.in_progress
+    assert subscription.renewal_date == datetime(2027, 6, 12, tzinfo=LONDON)
+
+
+def test_scraper_reads_a_plain_subscription_as_not_in_progress() -> None:
+    # Given a Garden Waste section with nothing in progress
+    page = a_garden_waste_page(
+        renewal="12 June 2027, soon due for renewal.", status=DIRECT_DEBIT_STATUS
+    )
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then nothing is in progress
+    assert subscription is not None
+    assert not subscription.in_progress
+
+
+@pytest.mark.parametrize("renewal", [None, "not a date", ""])
+def test_scraper_logs_a_warning_and_finds_nothing_when_the_renewal_cannot_be_read(
+    renewal: str | None, caplog: pytest.LogCaptureFixture
+) -> None:
+    # Given a Garden Waste section whose Renewal row is missing or not a date
+    page = a_garden_waste_page(renewal=renewal)
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    with caplog.at_level(logging.WARNING):
+        subscription = scraper.get_garden_waste_subscription()
+
+    # Then there is none and the problem is logged
+    assert subscription is None
+    assert "Could not read the Garden Waste renewal" in caplog.text
 
 
 def test_scraper_finds_no_subscription_without_a_garden_waste_section() -> None:

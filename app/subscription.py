@@ -18,4 +18,7 @@ class GardenWasteSubscription:
         return self._days_until_renewal(today) < 0
 
     def renewal_notice_due(self, today: datetime) -> bool:
-        return self._days_until_renewal(today) <= RENEWAL_NOTICE_LEAD_DAYS
+        return (
+            not self.in_progress
+            and self._days_until_renewal(today) <= RENEWAL_NOTICE_LEAD_DAYS
+        )

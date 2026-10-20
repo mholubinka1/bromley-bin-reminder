@@ -23,6 +23,11 @@ RENEWAL_LABEL = "Renewal"
 GARDEN_WASTE_SERVICE = "Garden Waste"
 RENEWAL_DATE_PATTERN = re.compile(r"\d{1,2} [A-Za-z]+ \d{4}")
 RENEWS_AUTOMATICALLY_TEXT = "will renew automatically"
+IN_PROGRESS_TEXTS = (
+    "Cancellation in progress",
+    "pending garden subscription",
+    "pending direct debit subscription",
+)
 
 
 class ScraperError(Exception):
@@ -183,14 +188,36 @@ class WasteworksScraper:
             service, following_service, SUBSCRIPTION_LABEL
         )
         if renewal_row is None or subscription_row is None:
+            logger.warning(
+                "Could not read the Garden Waste renewal: the Subscription or "
+                "Renewal row is missing."
+            )
             return None
-        renewal_date = RENEWAL_DATE_PATTERN.match(row_text(renewal_row))
+        renewal_text = row_text(renewal_row)
+        renewal_date = self._parse_renewal_date(renewal_text)
         if renewal_date is None:
+            logger.warning(
+                f"Could not read the Garden Waste renewal: no date in [{renewal_text}]."
+            )
             return None
+        text = section_text(service)
         return GardenWasteSubscription(
-            renewal_date=datetime.strptime(renewal_date.group(), "%d %B %Y").replace(
-                tzinfo=self._clock().tzinfo
-            ),
+            renewal_date=renewal_date,
             subscription_text=row_text(subscription_row),
-            renews_automatically=RENEWS_AUTOMATICALLY_TEXT in section_text(service),
+            renews_automatically=RENEWS_AUTOMATICALLY_TEXT in text,
+            in_progress=any(
+                marker in f"{renewal_text} {text}" for marker in IN_PROGRESS_TEXTS
+            ),
         )
+
+    def _parse_renewal_date(self, renewal_text: str) -> datetime | None:
+        """The leading date of the Renewal row; trailing notes are not part of it."""
+        match = RENEWAL_DATE_PATTERN.match(renewal_text)
+        if match is None:
+            return None
+        try:
+            return datetime.strptime(match.group(), "%d %B %Y").replace(
+                tzinfo=self._clock().tzinfo
+            )
+        except ValueError:
+            return None

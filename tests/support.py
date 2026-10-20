@@ -171,7 +171,9 @@ DIRECT_DEBIT_STATUS = (
 
 
 def a_garden_waste_page(
-    renewal: str, subscription: str = "£80.00 per year (1 bin)", status: str = ""
+    renewal: str | None,
+    subscription: str = "£80.00 per year (1 bin)",
+    status: str = "",
 ) -> str:
     """Render a WasteWorks page whose Garden Waste section is laid out like Bromley's template."""
     return (
@@ -186,7 +188,7 @@ def a_garden_waste_page(
         "<div><dt>Next collection</dt><dd>Tuesday, 6th October</dd></div>"
         "<div><dt>Last collection</dt><dd>Tuesday, 29th September</dd></div>"
         f"<div><dt>Subscription</dt><dd>\n  {subscription}\n</dd></div>"
-        f"<div><dt>Renewal</dt><dd>{renewal}</dd></div>"
+        f"{f'<div><dt>Renewal</dt><dd>{renewal}</dd></div>' if renewal is not None else ''}"
         "</dl>"
         f"{f'<p>{status}</p>' if status else ''}"
         "</div>"
