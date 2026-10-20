@@ -164,8 +164,14 @@ def a_wasteworks_page(*services: tuple[str, str | None]) -> str:
     )
 
 
+DIRECT_DEBIT_STATUS = (
+    "This property has an existing direct debit subscription "
+    "which will renew automatically."
+)
+
+
 def a_garden_waste_page(
-    renewal: str, subscription: str = "£80.00 per year (1 bin)"
+    renewal: str, subscription: str = "£80.00 per year (1 bin)", status: str = ""
 ) -> str:
     """Render a WasteWorks page whose Garden Waste section is laid out like Bromley's template."""
     return (
@@ -181,7 +187,9 @@ def a_garden_waste_page(
         "<div><dt>Last collection</dt><dd>Tuesday, 29th September</dd></div>"
         f"<div><dt>Subscription</dt><dd>\n  {subscription}\n</dd></div>"
         f"<div><dt>Renewal</dt><dd>{renewal}</dd></div>"
-        "</dl></div>"
+        "</dl>"
+        f"{f'<p>{status}</p>' if status else ''}"
+        "</div>"
         "</div></div></body></html>"
     )
 

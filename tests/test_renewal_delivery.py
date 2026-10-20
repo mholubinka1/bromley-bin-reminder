@@ -55,6 +55,56 @@ def test_renewal_notice_ntfy_push_states_the_date_and_price() -> None:
     }
 
 
+AUTOMATIC_SUBSCRIPTION = GardenWasteSubscription(
+    renewal_date=datetime(2027, 6, 12, tzinfo=LONDON),
+    subscription_text="£80.00 per year (1 bin)",
+    renews_automatically=True,
+)
+
+
+def test_renewal_notice_email_reassures_when_the_subscription_renews_automatically() -> (
+    None
+):
+    # Given the e-mail Channel and a subscription that renews automatically
+    channel = build_channels(parse_settings(yaml_settings()))[0]
+
+    # When the renewal notice is sent
+    with patch("notify.SMTP") as smtp:
+        channel.send_renewal(AUTOMATIC_SUBSCRIPTION, FRIDAY_EVENING)
+
+    # Then the e-mail says it renews automatically by direct debit
+    assert "renews automatically by direct debit" in sent_email_html(smtp)
+
+
+def test_renewal_notice_email_has_no_reassurance_for_a_manual_subscription() -> None:
+    # Given the e-mail Channel and a subscription that does not renew automatically
+    channel = build_channels(parse_settings(yaml_settings()))[0]
+
+    # When the renewal notice is sent
+    with patch("notify.SMTP") as smtp:
+        channel.send_renewal(SUBSCRIPTION, FRIDAY_EVENING)
+
+    # Then the e-mail does not claim it renews automatically
+    assert "automatically" not in sent_email_html(smtp)
+
+
+def test_renewal_notice_ntfy_push_reassures_and_has_no_reassurance_when_manual() -> (
+    None
+):
+    # Given the ntfy Channel
+    channel = email_and_ntfy_channels()[1]
+
+    # When the renewal notice is sent for an automatic and a manual subscription
+    with patch("notify.requests.post") as post:
+        channel.send_renewal(AUTOMATIC_SUBSCRIPTION, FRIDAY_EVENING)
+        channel.send_renewal(SUBSCRIPTION, FRIDAY_EVENING)
+
+    # Then only the automatic one says it renews automatically by direct debit
+    automatic, manual = (call.kwargs["json"]["message"] for call in post.call_args_list)
+    assert "renews automatically by direct debit" in automatic
+    assert "automatically" not in manual
+
+
 def test_a_failing_email_channel_does_not_block_the_ntfy_renewal_notice() -> None:
     # Given an e-mail Channel whose SMTP server is down, and a working ntfy Channel
     channels = email_and_ntfy_channels()

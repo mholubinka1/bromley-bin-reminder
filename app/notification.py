@@ -65,6 +65,7 @@ RENEWAL_EMAIL_TEMPLATE = """
             <h1>{subject}</h1>
             <p>Your Garden Waste subscription is due for renewal on {renewal_date}.</p>
             <p>Subscription: {subscription_text}</p>
+            {automatic_note}
         </body>
         </html>
         """
@@ -83,6 +84,7 @@ def build_renewal_ntfy_notification(
         message=(
             f"Subscription is due for renewal on {renewal_date} "
             f"({subscription.subscription_text})."
+            f"{' It renews automatically by direct debit.' if subscription.renews_automatically else ''}"
         ),
         priority=RENEWAL_NTFY_PRIORITY,
         tags=[emoji_tag(GARDEN_WASTE_SERVICE_NAME)],
@@ -96,6 +98,11 @@ def build_renewal_email(subscription: GardenWasteSubscription) -> MIMEMultipart:
         subject=RENEWAL_EMAIL_SUBJECT,
         renewal_date=print_renewal_date(subscription.renewal_date),
         subscription_text=escape(subscription.subscription_text),
+        automatic_note=(
+            "<p>It renews automatically by direct debit.</p>"
+            if subscription.renews_automatically
+            else ""
+        ),
     )
     msg.attach(MIMEText(body, "html"))
     return msg

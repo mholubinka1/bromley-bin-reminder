@@ -22,6 +22,7 @@ SUBSCRIPTION_LABEL = "Subscription"
 RENEWAL_LABEL = "Renewal"
 GARDEN_WASTE_SERVICE = "Garden Waste"
 RENEWAL_DATE_PATTERN = re.compile(r"\d{1,2} [A-Za-z]+ \d{4}")
+RENEWS_AUTOMATICALLY_TEXT = "will renew automatically"
 
 
 class ScraperError(Exception):
@@ -107,6 +108,12 @@ def find_service_row(
     return None
 
 
+def section_text(service: Tag) -> str:
+    """All the text of the service's own section on the page, whitespace-normalised."""
+    section = service.find_parent("div", class_="waste-service-grid")
+    return " ".join(section.get_text().split()) if section else ""
+
+
 def row_text(row: Tag) -> str:
     value = row.find_next_sibling("dd")
     return " ".join(value.get_text().split()) if value else ""
@@ -185,4 +192,5 @@ class WasteworksScraper:
                 tzinfo=self._clock().tzinfo
             ),
             subscription_text=row_text(subscription_row),
+            renews_automatically=RENEWS_AUTOMATICALLY_TEXT in section_text(service),
         )

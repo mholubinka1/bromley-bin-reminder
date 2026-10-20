@@ -3,6 +3,7 @@ from datetime import datetime
 import pytest
 from scraper import ScraperError, WasteworksScraper
 from support import (
+    DIRECT_DEBIT_STATUS,
     FRIDAY_EVENING,
     LONDON,
     FixturePageSource,
@@ -282,6 +283,40 @@ def test_scraper_reads_the_garden_waste_subscription_without_a_trailing_note() -
     # Then the date is read
     assert subscription is not None
     assert subscription.renewal_date == datetime(2027, 6, 12, tzinfo=LONDON)
+
+
+def test_scraper_reads_that_the_subscription_renews_automatically_by_direct_debit() -> (
+    None
+):
+    # Given a Garden Waste section saying the subscription renews automatically
+    page = a_garden_waste_page(
+        renewal="12 June 2027, soon due for renewal.", status=DIRECT_DEBIT_STATUS
+    )
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then it renews automatically
+    assert subscription is not None
+    assert subscription.renews_automatically
+
+
+def test_scraper_reads_that_the_subscription_does_not_renew_automatically() -> None:
+    # Given a Garden Waste section with no automatic renewal sentence
+    page = a_garden_waste_page(renewal="12 June 2027, soon due for renewal.")
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then it does not renew automatically
+    assert subscription is not None
+    assert not subscription.renews_automatically
 
 
 def test_scraper_finds_no_subscription_without_a_garden_waste_section() -> None:
