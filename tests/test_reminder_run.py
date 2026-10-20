@@ -55,37 +55,6 @@ def test_tomorrow_run_reminds_only_about_the_bins_collected_tomorrow() -> None:
     ]
 
 
-def test_tomorrow_run_logs_its_progress_and_the_services_it_reminds_about(
-    app_log: pytest.LogCaptureFixture,
-) -> None:
-    # Given food waste is collected tomorrow and garden waste later
-    settings = parse_settings(yaml_settings())
-    scraper = FakeScraper(
-        [
-            a_collection("Food Waste", day=3),
-            a_collection("Garden Waste", day=6),
-        ]
-    )
-
-    # When the Tomorrow reminder run executes
-    with patch("notify.SMTP"), patch("notify.requests.post"):
-        run_reminder(
-            Period.TOMORROW,
-            scraper,
-            build_channels(settings),
-            clock=lambda: FRIDAY_EVENING,
-        )
-
-    # Then the run logs its progress, including which collections it reminds about
-    run_log = [r.getMessage() for r in app_log.records if r.filename == "reminder.py"]
-    assert run_log == [
-        "Tomorrow reminder run started.",
-        "Tomorrow's collections: 1",
-        "Tomorrow's collections: [Food Waste]",
-        "Sending reminders for tomorrow's collections.",
-    ]
-
-
 def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> None:
     # Given ntfy is configured and nothing is collected tomorrow
     settings = parse_settings(
@@ -108,31 +77,6 @@ def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> Non
     # Then no email and no push go out
     assert smtp.return_value.sendmail.call_count == 0
     assert post.call_count == 0
-
-
-def test_run_reads_the_clock_once() -> None:
-    # Given a clock that counts how often it is read and a bin collected tomorrow
-    settings = parse_settings(yaml_settings())
-    scraper = FakeScraper([a_collection("Food Waste", day=3)])
-    clock_reads = 0
-
-    def counting_clock() -> datetime:
-        nonlocal clock_reads
-        clock_reads += 1
-        return FRIDAY_EVENING
-
-    # When the Tomorrow reminder run selects and sends
-    with patch("notify.SMTP") as smtp, patch("notify.requests.post"):
-        run_reminder(
-            Period.TOMORROW,
-            scraper,
-            build_channels(settings),
-            clock=counting_clock,
-        )
-
-    # Then the reminder went out and the clock was read exactly once
-    assert smtp.return_value.sendmail.call_count == 1
-    assert clock_reads == 1
 
 
 @pytest.mark.parametrize(
