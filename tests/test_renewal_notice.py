@@ -67,6 +67,23 @@ def test_sunday_run_sends_a_renewal_notice_when_the_renewal_is_exactly_30_days_a
     assert channel.renewals == [(subscription, FRIDAY_EVENING)]
 
 
+def test_sunday_run_sends_a_renewal_notice_when_the_subscription_is_overdue() -> None:
+    # Given a subscription whose renewal date passed 3 days ago
+    subscription = a_subscription(days_until_renewal=-3)
+    channel = RecordingChannel("only", [])
+
+    # When the Sunday (Week) run happens
+    run_reminder(
+        Period.WEEK,
+        FakeScraper([], subscription=subscription),
+        [channel],
+        clock=lambda: FRIDAY_EVENING,
+    )
+
+    # Then the renewal notice is sent
+    assert channel.renewals == [(subscription, FRIDAY_EVENING)]
+
+
 def test_tomorrow_run_sends_no_renewal_notice() -> None:
     # Given a subscription renewing in 20 days
     channel = RecordingChannel("only", [])

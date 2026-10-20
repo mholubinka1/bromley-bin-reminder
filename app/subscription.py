@@ -11,6 +11,11 @@ class GardenWasteSubscription:
     renews_automatically: bool = False
     in_progress: bool = False
 
+    def _days_until_renewal(self, today: datetime) -> int:
+        return (self.renewal_date.date() - today.date()).days
+
+    def is_overdue(self, today: datetime) -> bool:
+        return self._days_until_renewal(today) < 0
+
     def renewal_notice_due(self, today: datetime) -> bool:
-        days_until_renewal = (self.renewal_date.date() - today.date()).days
-        return 0 <= days_until_renewal <= RENEWAL_NOTICE_LEAD_DAYS
+        return self._days_until_renewal(today) <= RENEWAL_NOTICE_LEAD_DAYS

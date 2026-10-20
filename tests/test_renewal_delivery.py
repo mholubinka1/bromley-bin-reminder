@@ -105,6 +105,42 @@ def test_renewal_notice_ntfy_push_reassures_and_has_no_reassurance_when_manual()
     assert "automatically" not in manual
 
 
+OVERDUE_AT = datetime(2027, 6, 20, 18, 0, tzinfo=LONDON)
+
+
+def test_overdue_notice_email_says_the_subscription_is_overdue() -> None:
+    # Given the e-mail Channel and a subscription whose renewal date has passed
+    channel = build_channels(parse_settings(yaml_settings()))[0]
+
+    # When the renewal notice is sent
+    with patch("notify.SMTP") as smtp:
+        channel.send_renewal(AUTOMATIC_SUBSCRIPTION, OVERDUE_AT)
+
+    # Then the e-mail says it is overdue, with the date and price, and no reassurance
+    assert sent_email(smtp).subject == "Garden Waste subscription overdue"
+    body = sent_email_html(smtp)
+    assert "overdue" in body
+    assert "12 June 2027" in body
+    assert "£80.00 per year (1 bin)" in body
+    assert "automatically" not in body
+
+
+def test_overdue_notice_ntfy_push_has_a_higher_priority_than_a_due_notice() -> None:
+    # Given the ntfy Channel
+    channel = email_and_ntfy_channels()[1]
+
+    # When an overdue and a due notice are sent
+    with patch("notify.requests.post") as post:
+        channel.send_renewal(SUBSCRIPTION, OVERDUE_AT)
+        channel.send_renewal(SUBSCRIPTION, FRIDAY_EVENING)
+
+    # Then the overdue push says so and outranks the due one
+    overdue, due = (call.kwargs["json"] for call in post.call_args_list)
+    assert overdue["title"] == "Garden Waste: subscription overdue"
+    assert "12 June 2027" in overdue["message"]
+    assert overdue["priority"] > due["priority"]
+
+
 def test_a_failing_email_channel_does_not_block_the_ntfy_renewal_notice() -> None:
     # Given an e-mail Channel whose SMTP server is down, and a working ntfy Channel
     channels = email_and_ntfy_channels()

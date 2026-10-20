@@ -53,7 +53,9 @@ def build_ntfy_notifications(
 
 GARDEN_WASTE_SERVICE_NAME = "Garden Waste"
 RENEWAL_NTFY_PRIORITY = 3
+OVERDUE_NTFY_PRIORITY = 4
 RENEWAL_EMAIL_SUBJECT = "Garden Waste subscription due for renewal"
+OVERDUE_EMAIL_SUBJECT = "Garden Waste subscription overdue"
 RENEWAL_EMAIL_TEMPLATE = """
         <!DOCTYPE html>
         <html lang="en">
@@ -63,7 +65,7 @@ RENEWAL_EMAIL_TEMPLATE = """
         </head>
         <body style="font-family: Arial, sans-serif; margin: 20px;">
             <h1>{subject}</h1>
-            <p>Your Garden Waste subscription is due for renewal on {renewal_date}.</p>
+            <p>{statement}</p>
             <p>Subscription: {subscription_text}</p>
             {automatic_note}
         </body>
@@ -76,31 +78,55 @@ def print_renewal_date(date: datetime) -> str:
 
 
 def build_renewal_ntfy_notification(
-    subscription: GardenWasteSubscription,
+    subscription: GardenWasteSubscription, now: datetime
 ) -> NtfyNotification:
     renewal_date = print_renewal_date(subscription.renewal_date)
+    text = subscription.subscription_text
+    if subscription.is_overdue(now):
+        return NtfyNotification(
+            title=f"{GARDEN_WASTE_SERVICE_NAME}: subscription overdue",
+            message=(
+                f"Subscription was due for renewal on {renewal_date} ({text}). "
+                "Renew it to keep your garden bins collected."
+            ),
+            priority=OVERDUE_NTFY_PRIORITY,
+            tags=[emoji_tag(GARDEN_WASTE_SERVICE_NAME)],
+        )
+    automatic = (
+        " It renews automatically by direct debit."
+        if subscription.renews_automatically
+        else ""
+    )
     return NtfyNotification(
         title=f"{GARDEN_WASTE_SERVICE_NAME}: due for renewal",
-        message=(
-            f"Subscription is due for renewal on {renewal_date} "
-            f"({subscription.subscription_text})."
-            f"{' It renews automatically by direct debit.' if subscription.renews_automatically else ''}"
-        ),
+        message=f"Subscription is due for renewal on {renewal_date} ({text}).{automatic}",
         priority=RENEWAL_NTFY_PRIORITY,
         tags=[emoji_tag(GARDEN_WASTE_SERVICE_NAME)],
     )
 
 
-def build_renewal_email(subscription: GardenWasteSubscription) -> MIMEMultipart:
+def build_renewal_email(
+    subscription: GardenWasteSubscription, now: datetime
+) -> MIMEMultipart:
+    renewal_date = print_renewal_date(subscription.renewal_date)
+    overdue = subscription.is_overdue(now)
+    subject = OVERDUE_EMAIL_SUBJECT if overdue else RENEWAL_EMAIL_SUBJECT
+    statement = (
+        f"Your Garden Waste subscription was due for renewal on {renewal_date} "
+        "and is now overdue. Garden Waste collections will not continue until "
+        "it is renewed."
+        if overdue
+        else f"Your Garden Waste subscription is due for renewal on {renewal_date}."
+    )
     msg = MIMEMultipart()
-    msg["Subject"] = RENEWAL_EMAIL_SUBJECT
+    msg["Subject"] = subject
     body = RENEWAL_EMAIL_TEMPLATE.format(
-        subject=RENEWAL_EMAIL_SUBJECT,
-        renewal_date=print_renewal_date(subscription.renewal_date),
+        subject=subject,
+        statement=statement,
         subscription_text=escape(subscription.subscription_text),
         automatic_note=(
             "<p>It renews automatically by direct debit.</p>"
-            if subscription.renews_automatically
+            if subscription.renews_automatically and not overdue
             else ""
         ),
     )

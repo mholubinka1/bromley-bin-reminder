@@ -116,7 +116,7 @@ class EmailChannel:
     ) -> None:
         try:
             self._send_email(
-                build_renewal_email(subscription),
+                build_renewal_email(subscription, now),
                 "Sent renewal notice e-mail to [{recipients}]",
             )
         except Exception:
@@ -159,7 +159,7 @@ class NtfyChannel:
         self, subscription: GardenWasteSubscription, now: datetime
     ) -> None:
         try:
-            notification = build_renewal_ntfy_notification(subscription)
+            notification = build_renewal_ntfy_notification(subscription, now)
             self._publish(notification)
         except Exception:
             logger.exception("Failed to send ntfy renewal notice.")
