@@ -164,6 +164,7 @@ def test_main_configures_logging_before_it_logs_or_reads_arguments() -> None:
     calls = MagicMock()
     with (
         patch("main.configure_logging", calls.configure_logging),
+        patch("main.logger", calls.logger),
         patch("main.parse_args", calls.parse_args),
     ):
         calls.parse_args.side_effect = SystemExit(2)
@@ -172,8 +173,12 @@ def test_main_configures_logging_before_it_logs_or_reads_arguments() -> None:
         with pytest.raises(SystemExit):
             main.main()
 
-    # Then logging was configured before anything else ran
-    assert [call[0] for call in calls.mock_calls] == ["configure_logging", "parse_args"]
+    # Then logging was configured before the first log line and before arguments are read
+    assert [call[0] for call in calls.mock_calls] == [
+        "configure_logging",
+        "logger.info",
+        "parse_args",
+    ]
 
 
 def test_console_only_when_the_log_directory_is_missing(tmp_path: Path) -> None:
