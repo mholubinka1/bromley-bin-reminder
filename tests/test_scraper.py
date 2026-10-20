@@ -332,6 +332,7 @@ def test_scraper_reads_that_the_subscription_does_not_renew_automatically() -> N
             "12 June 2027, soon due for renewal.",
             "This property has a pending direct debit subscription.",
         ),
+        ("12 June 2027, soon due for renewal.", "PENDING GARDEN SUBSCRIPTION."),
     ],
 )
 def test_scraper_reads_that_a_cancellation_or_new_subscription_is_in_progress(
@@ -404,6 +405,46 @@ def test_scraper_logs_a_warning_when_only_the_subscription_row_is_missing(
     # Then there is none and the problem is logged
     assert subscription is None
     assert "Could not read the Garden Waste renewal" in caplog.text
+
+
+def test_scraper_reads_the_date_of_an_overdue_subscription() -> None:
+    # Given a Garden Waste section whose Renewal row says the subscription is overdue
+    page = a_garden_waste_page(renewal="12 June 2027, subscription overdue.")
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then the date is the leading date, whatever the note after it
+    assert subscription is not None
+    assert subscription.renewal_date == datetime(2027, 6, 12, tzinfo=LONDON)
+
+
+def test_scraper_warns_and_misses_an_in_progress_note_when_the_section_container_is_missing(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given a Garden Waste heading outside any section container, with a pending note
+    page = (
+        '<html><body><h3 class="govuk-heading-m waste-service-name">Garden Waste</h3>'
+        '<dl class="govuk-summary-list">'
+        "<div><dt>Subscription</dt><dd>£80.00 per year (1 bin)</dd></div>"
+        "<div><dt>Renewal</dt><dd>12 June 2027</dd></div></dl>"
+        "<p>This property has a pending garden subscription.</p></body></html>"
+    )
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    with caplog.at_level(logging.WARNING):
+        subscription = scraper.get_garden_waste_subscription()
+
+    # Then the date is read, the note is missed, and the warning says so
+    assert subscription is not None
+    assert not subscription.in_progress
+    assert "will not be detected" in caplog.text
 
 
 def test_scraper_quietly_finds_no_subscription_in_a_garden_waste_section_with_only_a_cost(

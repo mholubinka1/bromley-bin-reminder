@@ -33,7 +33,7 @@ The message, sent over each Channel on the weekly run, that a Garden Waste subsc
 _Avoid_: expiry warning, renewal reminder
 
 **Reminder run**:
-One scheduled execution for a single Period: scrape the WasteWorks page, select that Period's Waste Collections, and send the Reminder when there are any. A failed run is logged and never stops later runs.
+One scheduled execution for a single Period: scrape the WasteWorks page, select that Period's Waste Collections, and send the Reminder when there are any. The Week run also checks the Garden Waste subscription and may send a Renewal notice. A failed run is logged and never stops later runs.
 _Avoid_: job, task
 
 **Channel**:

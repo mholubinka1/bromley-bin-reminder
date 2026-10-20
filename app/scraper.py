@@ -23,8 +23,8 @@ RENEWAL_LABEL = "Renewal"
 GARDEN_WASTE_SERVICE = "Garden Waste"
 RENEWAL_DATE_PATTERN = re.compile(r"\d{1,2} [A-Za-z]+ \d{4}")
 RENEWS_AUTOMATICALLY_TEXT = "will renew automatically"
-IN_PROGRESS_TEXTS = (
-    "Cancellation in progress",
+IN_PROGRESS_TEXTS = (  # lowercase: compared against the lowercased section text
+    "cancellation in progress",
     "pending garden subscription",
     "pending direct debit subscription",
 )
@@ -213,7 +213,7 @@ class WasteworksScraper:
             renewal_date=renewal_date,
             subscription_text=row_text(subscription_row),
             renews_automatically=RENEWS_AUTOMATICALLY_TEXT in text,
-            in_progress=any(marker in text for marker in IN_PROGRESS_TEXTS),
+            in_progress=any(marker in text.lower() for marker in IN_PROGRESS_TEXTS),
         )
 
     def _parse_renewal_date(self, renewal_text: str) -> datetime | None:
