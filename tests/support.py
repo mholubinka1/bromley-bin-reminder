@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 from collection import WasteCollection
-from notification import NtfyNotification
+from period import Period
 
 LONDON = ZoneInfo("Europe/London")
 FRIDAY_EVENING = datetime(2026, 10, 2, 18, 0, tzinfo=LONDON)
@@ -37,15 +37,6 @@ def yaml_settings(**extra: Any) -> dict[str, Any]:
         },
         **extra,
     }
-
-
-def a_notification(title: str = "Food Waste: tomorrow") -> NtfyNotification:
-    return NtfyNotification(
-        title=title,
-        message="Put it out tonight.",
-        priority=4,
-        tags=["banana"],
-    )
 
 
 @dataclass
@@ -162,6 +153,19 @@ def a_wasteworks_page(*services: tuple[str, str | None]) -> str:
         f'<div class="govuk-grid-column-two-thirds">{"".join(sections)}</div>'
         "</div></body></html>"
     )
+
+
+class RecordingChannel:
+    def __init__(self, name: str, sent: list[str]) -> None:
+        self._name = name
+        self._sent = sent
+        self.reminders: list[tuple[list[WasteCollection], datetime, Period]] = []
+
+    def send(
+        self, collections: list[WasteCollection], now: datetime, period: Period
+    ) -> None:
+        self.reminders.append((collections, now, period))
+        self._sent.append(self._name)
 
 
 class FixturePageSource:

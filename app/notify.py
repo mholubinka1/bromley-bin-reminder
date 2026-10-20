@@ -1,13 +1,21 @@
 import logging.config
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from logging import Logger, getLogger
 from smtplib import SMTP
+from typing import Protocol
 
 import requests
+from collection import WasteCollection
 from common.decorators import retry
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import ApplicationSettings, is_null_or_empty
-from notification import NtfyNotification, WasteCollectionNotification
+from notification import (
+    NtfyNotification,
+    WasteCollectionNotification,
+    build_ntfy_notifications,
+)
+from period import Period
 
 logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
@@ -63,22 +71,65 @@ class NtfyClient:
         response.raise_for_status()
 
 
-class Notify:
+class Channel(Protocol):
+    """A delivery route for a Reminder.
+
+    send must not raise: a Channel catches and logs its own failures, so one failing
+    Channel can never stop the next from delivering.
+    """
+
+    def send(
+        self, collections: list[WasteCollection], now: datetime, period: Period
+    ) -> None: ...
+
+
+class EmailChannel:
     _client: SMTPClient
-    _ntfy_client: NtfyClient | None
+    _sender: str
+    _email_addresses: list[str]
 
     def __init__(
-        self, email_client: SMTPClient, ntfy_client: NtfyClient | None = None
+        self, client: SMTPClient, sender: str, email_addresses: list[str]
     ) -> None:
-        self._client = email_client
-        self._ntfy_client = ntfy_client
+        self._client = client
+        self._sender = sender
+        self._email_addresses = email_addresses
 
-    def send_ntfy(self, notifications: list[NtfyNotification]) -> None:
-        if self._ntfy_client is None:
+    def send(
+        self, collections: list[WasteCollection], now: datetime, period: Period
+    ) -> None:
+        try:
+            self._send_email(WasteCollectionNotification(collections, now, period))
+        except Exception:
+            logger.exception(f"Failed to send {period.name.lower()} email reminder.")
+
+    @retry()
+    def _send_email(self, notification: WasteCollectionNotification) -> None:
+        msg = notification.email
+        msg["From"] = self._sender
+        recipients = ", ".join(self._email_addresses)
+        msg["To"] = recipients
+        self._client.send_mail(self._sender, self._email_addresses, message=msg)
+        logger.info(f"Sent notification e-mail to [{recipients}]")
+
+
+class NtfyChannel:
+    _client: NtfyClient
+
+    def __init__(self, client: NtfyClient) -> None:
+        self._client = client
+
+    def send(
+        self, collections: list[WasteCollection], now: datetime, period: Period
+    ) -> None:
+        try:
+            notifications = build_ntfy_notifications(collections, period)
+        except Exception:
+            logger.exception(f"Failed to send {period.name.lower()} ntfy reminder.")
             return
         for notification in notifications:
             try:
-                self._publish_ntfy(self._ntfy_client, notification)
+                self._publish(notification)
             except Exception:
                 logger.exception(
                     f"Failed to send ntfy notification [{notification.title}]"
@@ -87,34 +138,24 @@ class Notify:
                 logger.info(f"Sent ntfy notification [{notification.title}]")
 
     @retry()
-    def _publish_ntfy(self, client: NtfyClient, notification: NtfyNotification) -> None:
-        client.publish(notification)
-
-    @retry()
-    def send_email(
-        self,
-        notification: WasteCollectionNotification,
-        sender: str,
-        email_addresses: list[str],
-    ) -> None:
-        msg = notification.email
-        msg["From"] = sender
-        recipients = ", ".join(email_addresses)
-        msg["To"] = recipients
-        self._client.send_mail(sender, email_addresses, message=msg)
-        logger.info(f"Sent notification e-mail to [{recipients}]")
+    def _publish(self, notification: NtfyNotification) -> None:
+        self._client.publish(notification)
 
 
-def build_notify(settings: ApplicationSettings) -> Notify:
+def build_channels(settings: ApplicationSettings) -> list[Channel]:
     smtp_client = SMTPClient(
         username=settings.smtp.username,
         password=settings.smtp.password,
         server=settings.smtp.server,
         port=settings.smtp.port,
     )
-    ntfy_client = (
-        NtfyClient(server=settings.ntfy.server, topic=settings.ntfy.topic)
-        if settings.ntfy
-        else None
-    )
-    return Notify(email_client=smtp_client, ntfy_client=ntfy_client)
+    channels: list[Channel] = [
+        EmailChannel(smtp_client, settings.smtp.username, settings.remind.target_emails)
+    ]
+    if settings.ntfy:
+        channels.append(
+            NtfyChannel(
+                NtfyClient(server=settings.ntfy.server, topic=settings.ntfy.topic)
+            )
+        )
+    return channels

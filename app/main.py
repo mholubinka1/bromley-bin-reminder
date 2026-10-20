@@ -8,7 +8,7 @@ from threading import Thread
 
 from common.logging import APP_LOGGER_NAME, config
 from common.settings import load_settings
-from notify import build_notify
+from notify import build_channels
 from reload import ConfigChangePoller
 from reminder import schedule_reminder_runs
 from schedule import default_scheduler, run_pending
@@ -40,7 +40,7 @@ def main() -> None:
             SeleniumPageSource(), settings.wasteworks_url, current_time
         )
         logger.info(f"ntfy notifications {'enabled' if settings.ntfy else 'disabled'}.")
-        notify = build_notify(settings)
+        channels = build_channels(settings)
     except Exception:
         logger.exception("Could not load startup configuration.")
         sys.exit(1)
@@ -54,7 +54,7 @@ def main() -> None:
     logger.info(f"Monitoring config file {config_file} for changes.")
 
     schedule_reminder_runs(
-        default_scheduler, web_scraper, notify, settings, current_time
+        default_scheduler, web_scraper, channels, settings, current_time
     )
 
     try:

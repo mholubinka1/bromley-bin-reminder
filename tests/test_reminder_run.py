@@ -1,13 +1,11 @@
 import logging
-from collections.abc import Iterator
 from datetime import datetime
 from unittest.mock import patch
 
 import pytest
 from collection import WasteCollection
-from common.logging import APP_LOGGER_NAME
 from common.settings import parse_settings
-from notify import build_notify
+from notify import build_channels
 from period import Period
 from reminder import run_reminder
 from support import (
@@ -21,15 +19,6 @@ from support import (
 )
 
 NTFY_SERVER = "https://ntfy.example.com"
-
-
-@pytest.fixture
-def app_log(caplog: pytest.LogCaptureFixture) -> Iterator[pytest.LogCaptureFixture]:
-    app_logger = logging.getLogger(APP_LOGGER_NAME)
-    app_logger.addHandler(caplog.handler)
-    caplog.set_level(logging.INFO, logger=APP_LOGGER_NAME)
-    yield caplog
-    app_logger.removeHandler(caplog.handler)
 
 
 def test_tomorrow_run_reminds_only_about_the_bins_collected_tomorrow() -> None:
@@ -52,8 +41,7 @@ def test_tomorrow_run_reminds_only_about_the_bins_collected_tomorrow() -> None:
         run_reminder(
             Period.TOMORROW,
             scraper,
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             clock=lambda: FRIDAY_EVENING,
         )
 
@@ -84,8 +72,7 @@ def test_tomorrow_run_logs_its_progress_and_the_services_it_reminds_about(
         run_reminder(
             Period.TOMORROW,
             scraper,
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             clock=lambda: FRIDAY_EVENING,
         )
 
@@ -114,8 +101,7 @@ def test_tomorrow_run_sends_nothing_when_no_bins_are_collected_tomorrow() -> Non
         run_reminder(
             Period.TOMORROW,
             scraper,
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             clock=lambda: FRIDAY_EVENING,
         )
 
@@ -140,8 +126,7 @@ def test_run_reads_the_clock_once() -> None:
         run_reminder(
             Period.TOMORROW,
             scraper,
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             clock=counting_clock,
         )
 
@@ -171,8 +156,7 @@ def test_run_that_cannot_scrape_is_logged_and_sends_nothing(
         run_reminder(
             period,
             FailingScraper(),
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             clock=lambda: FRIDAY_EVENING,
         )
 
@@ -207,8 +191,7 @@ def test_week_run_reminds_about_this_weeks_bins_earliest_first(
         run_reminder(
             Period.WEEK,
             scraper,
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             clock=lambda: FRIDAY_EVENING,
         )
 
@@ -243,8 +226,7 @@ def test_run_whose_scrape_crosses_midnight_selects_for_the_day_after_the_scrape(
         run_reminder(
             Period.TOMORROW,
             MidnightCrossingScraper(),
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             clock=lambda: time_now["now"],
         )
 

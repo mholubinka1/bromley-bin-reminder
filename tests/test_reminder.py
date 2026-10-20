@@ -1,13 +1,30 @@
 from unittest.mock import patch
 
+import pytest
 import requests
 from common.settings import ApplicationSettings, parse_settings
-from notify import build_notify
+from notify import build_channels
 from period import Period
 from reminder import send_reminders
-from support import FRIDAY_EVENING, a_collection, yaml_settings
+from support import FRIDAY_EVENING, RecordingChannel, a_collection, yaml_settings
 
 NTFY_SERVER = "https://ntfy.example.com"
+
+
+def test_a_reminder_is_sent_through_every_channel_in_order() -> None:
+    # Given two Channels and a collection tomorrow
+    sent: list[str] = []
+    first, second = RecordingChannel("first", sent), RecordingChannel("second", sent)
+    collections = [a_collection("Food Waste", day=3)]
+
+    # When the reminder is sent
+    send_reminders([first, second], collections, FRIDAY_EVENING, Period.TOMORROW)
+
+    # Then each Channel receives the same reminder, in order
+    assert sent == ["first", "second"]
+    expected = (collections, FRIDAY_EVENING, Period.TOMORROW)
+    assert first.reminders == [expected]
+    assert second.reminders == [expected]
 
 
 def settings_with_ntfy(ntfy: dict[str, str] | None) -> ApplicationSettings:
@@ -34,8 +51,7 @@ def test_night_before_reminder_is_emailed_and_pushed_once_per_bin() -> None:
         patch("notify.requests.post") as post,
     ):
         send_reminders(
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             collections,
             FRIDAY_EVENING,
             Period.TOMORROW,
@@ -64,7 +80,7 @@ def test_weekly_reminder_is_emailed_and_pushed_once_per_bin_in_order() -> None:
         patch("notify.requests.post") as post,
     ):
         send_reminders(
-            build_notify(settings), settings, collections, FRIDAY_EVENING, Period.WEEK
+            build_channels(settings), collections, FRIDAY_EVENING, Period.WEEK
         )
 
     # Then one email goes out and one default priority push per bin, in order
@@ -87,8 +103,7 @@ def test_reminder_without_ntfy_configured_only_sends_the_email() -> None:
         patch("notify.requests.post") as post,
     ):
         send_reminders(
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             collections,
             FRIDAY_EVENING,
             Period.TOMORROW,
@@ -114,8 +129,7 @@ def test_reminder_is_still_pushed_when_the_email_cannot_be_sent() -> None:
         patch("common.decorators.time.sleep"),
     ):
         send_reminders(
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             collections,
             FRIDAY_EVENING,
             Period.TOMORROW,
@@ -126,6 +140,29 @@ def test_reminder_is_still_pushed_when_the_email_cannot_be_sent() -> None:
         "Food Waste: tomorrow",
         "Garden Waste: tomorrow",
     ]
+
+
+def test_reminder_is_still_emailed_when_the_ntfy_content_cannot_be_built(
+    app_log: pytest.LogCaptureFixture,
+) -> None:
+    # Given ntfy is configured but its content cannot be built
+    settings = an_ntfy_configured_application()
+    collections = [a_collection("Food Waste", day=3)]
+
+    # When the night-before reminder is sent
+    with (
+        patch("notify.SMTP") as smtp,
+        patch("notify.requests.post") as post,
+        patch("notify.build_ntfy_notifications", side_effect=ValueError("bad")),
+    ):
+        send_reminders(
+            build_channels(settings), collections, FRIDAY_EVENING, Period.TOMORROW
+        )
+
+    # Then the email still goes out, nothing is pushed and the failure is logged
+    assert smtp.return_value.sendmail.call_count == 1
+    post.assert_not_called()
+    assert "Failed to send tomorrow ntfy reminder." in app_log.text
 
 
 def test_reminder_is_still_emailed_when_ntfy_cannot_be_reached() -> None:
@@ -143,8 +180,7 @@ def test_reminder_is_still_emailed_when_ntfy_cannot_be_reached() -> None:
         patch("common.decorators.time.sleep"),
     ):
         send_reminders(
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             collections,
             FRIDAY_EVENING,
             Period.TOMORROW,
@@ -162,8 +198,7 @@ def test_night_before_push_tells_the_resident_to_put_the_bin_out_tonight() -> No
     # When the night-before reminder is sent
     with patch("notify.SMTP"), patch("notify.requests.post") as post:
         send_reminders(
-            build_notify(settings),
-            settings,
+            build_channels(settings),
             collections,
             FRIDAY_EVENING,
             Period.TOMORROW,
@@ -187,7 +222,7 @@ def test_weekly_push_announces_the_collection_date() -> None:
     # When the weekly reminder is sent
     with patch("notify.SMTP"), patch("notify.requests.post") as post:
         send_reminders(
-            build_notify(settings), settings, collections, FRIDAY_EVENING, Period.WEEK
+            build_channels(settings), collections, FRIDAY_EVENING, Period.WEEK
         )
 
     # Then the push is a default priority announcement tagged with the bin's emoji
