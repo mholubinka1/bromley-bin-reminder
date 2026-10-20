@@ -1,10 +1,10 @@
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.12.10
+    rev: 0.13.3
     hooks:
       - id: uv-lock
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.1
+    rev: v2.4.0
     hooks:
       - id: mypy
         additional_dependencies: [
@@ -21,7 +21,7 @@ repos:
         name: isort (python)
         args: ["--profile", "black"]
   - repo: https://github.com/psf/black
-    rev: 26.5.1
+    rev: 26.10.1
     hooks:
       - id: black
   - repo: https://github.com/astral-sh/ruff-pre-commit
