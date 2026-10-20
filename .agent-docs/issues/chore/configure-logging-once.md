@@ -1,5 +1,7 @@
 # Issues: chore/configure-logging-once
 
+> Work complete — PR ready to merge.
+
 ## Logging is configured once, at startup
 
 **Blocked by**: None
@@ -19,11 +21,11 @@ double-recording.
 
 ### Acceptance criteria
 
-- [ ] Given a writable log directory, when logging is configured, then the app logger has console and file handlers with propagation off, and messages reach the log file
-- [ ] Given an unwritable log directory, when logging is configured, then only the console handler is used and the reason is printed once on stderr
-- [ ] Given logging is configured twice, then the app logger has a single set of handlers
-- [ ] Given a module is imported, then no handler is added to the app logger and no log file is opened
-- [ ] Only `configure_logging` calls `dictConfig` in the application; format, handlers, rotation and log lines are unchanged
+- [x] Given a writable log directory, when logging is configured, then the app logger has console and file handlers with propagation off, and messages reach the log file
+- [x] Given an unwritable log directory, when logging is configured, then only the console handler is used and the reason is printed once on stderr
+- [x] Given logging is configured twice, then the app logger has a single set of handlers
+- [x] Given a module is imported, then no handler is added to the app logger and no log file is opened
+- [x] Only `configure_logging` calls `dictConfig` in the application; format, handlers, rotation and log lines are unchanged
 
 ---
 
@@ -42,7 +44,7 @@ sees it. The `app_log` fixture shrinks to setting the app logger's level and ret
 
 ### Acceptance criteria
 
-- [ ] Given a test that triggers a logged failure, when it asserts on the log, then it reads it through `caplog` with no hand-attached handler, and each line is recorded once
-- [ ] `captured_app_logs` is gone and `app_log` no longer attaches a handler
+- [x] Given a test that triggers a logged failure, when it asserts on the log, then it reads it through `caplog` with no hand-attached handler, and each line is recorded once
+- [x] `captured_app_logs` is gone and `app_log` no longer attaches a handler
 
 ---
