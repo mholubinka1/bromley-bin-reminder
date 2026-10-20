@@ -1,4 +1,3 @@
-import logging.config
 import sys
 import time
 from argparse import ArgumentParser, Namespace
@@ -6,7 +5,7 @@ from datetime import datetime
 from logging import Logger, getLogger
 from threading import Thread
 
-from common.logging import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME, configure_logging
 from common.settings import load_settings
 from notify import build_channels
 from reload import ConfigChangePoller
@@ -14,10 +13,7 @@ from reminder import schedule_reminder_runs
 from schedule import default_scheduler, run_pending
 from scraper import SeleniumPageSource, WasteworksScraper
 
-logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
-
-logger.info("Starting bromley-bin-reminder.")
 
 
 def parse_args() -> Namespace:
@@ -28,6 +24,8 @@ def parse_args() -> Namespace:
 
 
 def main() -> None:
+    configure_logging()
+    logger.info("Starting bromley-bin-reminder.")
     try:
         args = parse_args()
         config_file = args.config_file

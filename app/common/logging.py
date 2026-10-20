@@ -1,3 +1,4 @@
+import logging.config
 import os
 import sys
 from pathlib import Path
@@ -66,4 +67,7 @@ def _can_write_log_file(log_file: Path) -> bool:
         return False
 
 
-config = build_config(os.environ.get(LOG_DIR_ENV, DEFAULT_LOG_DIR))
+def configure_logging(log_dir: str | None = None) -> None:
+    if log_dir is None:
+        log_dir = os.environ.get(LOG_DIR_ENV, DEFAULT_LOG_DIR)
+    logging.config.dictConfig(build_config(log_dir))

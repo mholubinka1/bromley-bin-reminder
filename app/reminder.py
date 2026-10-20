@@ -1,17 +1,15 @@
-import logging.config
 from collections.abc import Callable
 from datetime import datetime
 from logging import Logger, getLogger
 from typing import Protocol
 
 from collection import WasteCollection
-from common.logging import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME
 from common.settings import ApplicationSettings
 from notify import Channel
 from period import Period
 from schedule import Scheduler
 
-logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 

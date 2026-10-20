@@ -1,4 +1,3 @@
-import logging.config
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from logging import Logger, getLogger
@@ -8,7 +7,7 @@ from typing import Protocol
 import requests
 from collection import WasteCollection
 from common.decorators import retry
-from common.logging import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME
 from common.settings import ApplicationSettings, is_null_or_empty
 from notification import (
     NtfyNotification,
@@ -17,7 +16,6 @@ from notification import (
 )
 from period import Period
 
-logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 NTFY_TIMEOUT_SECONDS = 10

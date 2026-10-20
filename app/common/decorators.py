@@ -1,12 +1,10 @@
-import logging.config
 import time
 from collections.abc import Callable
 from logging import Logger, getLogger
 from typing import Any
 
-from common.logging import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME
 
-logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 

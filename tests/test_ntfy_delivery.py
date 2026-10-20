@@ -1,13 +1,9 @@
-import io
-import logging
-from collections.abc import Iterator
-from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
 import requests
 from collection import WasteCollection
-from common.logging import APP_LOGGER_NAME
 from common.settings import parse_settings
 from notify import EmailChannel, NtfyChannel, NtfyClient, build_channels
 from period import Period
@@ -22,19 +18,6 @@ def an_ntfy_channel() -> NtfyChannel:
 
 def collections_named(*service_names: str) -> list[WasteCollection]:
     return [a_collection(name) for name in service_names]
-
-
-@contextmanager
-def captured_app_logs() -> Iterator[io.StringIO]:
-    # caplog cannot see the app logger because it does not propagate
-    log_stream = io.StringIO()
-    handler = logging.StreamHandler(log_stream)
-    app_logger = logging.getLogger(APP_LOGGER_NAME)
-    app_logger.addHandler(handler)
-    try:
-        yield log_stream
-    finally:
-        app_logger.removeHandler(handler)
 
 
 def test_each_notification_is_posted_to_the_ntfy_server_as_json() -> None:
@@ -74,7 +57,9 @@ def test_a_notification_is_retried_when_the_ntfy_server_fails_once() -> None:
     assert post.call_count == 2
 
 
-def test_one_failing_notification_does_not_stop_the_others_being_delivered() -> None:
+def test_one_failing_notification_does_not_stop_the_others_being_delivered(
+    app_log: pytest.LogCaptureFixture,
+) -> None:
     # Given three notifications, the second of which the server always rejects
     channel = an_ntfy_channel()
     collections = collections_named("First", "Second", "Third")
@@ -86,7 +71,6 @@ def test_one_failing_notification_does_not_stop_the_others_being_delivered() -> 
 
     # When the notifications are sent
     with (
-        captured_app_logs() as log_stream,
         patch("notify.requests.post", side_effect=post) as mock_post,
         patch("common.decorators.time.sleep"),
     ):
@@ -99,14 +83,13 @@ def test_one_failing_notification_does_not_stop_the_others_being_delivered() -> 
     assert attempted.count("Second: tomorrow") > 1
 
     # And the failure is logged by title without revealing the topic
-    logs = log_stream.getvalue()
-    assert "Second: tomorrow" in logs
-    assert TOPIC not in logs
+    assert "Second: tomorrow" in app_log.text
+    assert TOPIC not in app_log.text
 
 
-def test_notifications_are_still_delivered_when_the_server_answers_with_an_error() -> (
-    None
-):
+def test_notifications_are_still_delivered_when_the_server_answers_with_an_error(
+    app_log: pytest.LogCaptureFixture,
+) -> None:
     # Given an ntfy server that answers every request with HTTP 500
     channel = an_ntfy_channel()
     collections = collections_named("First", "Second")
@@ -115,7 +98,6 @@ def test_notifications_are_still_delivered_when_the_server_answers_with_an_error
 
     # When the notifications are sent
     with (
-        captured_app_logs() as log_stream,
         patch("notify.requests.post", return_value=error_response) as post,
         patch("common.decorators.time.sleep"),
     ):
@@ -125,10 +107,9 @@ def test_notifications_are_still_delivered_when_the_server_answers_with_an_error
     # and the failures are logged without revealing the topic
     attempted = {call.kwargs["json"]["title"] for call in post.call_args_list}
     assert attempted == {"First: tomorrow", "Second: tomorrow"}
-    logs = log_stream.getvalue()
-    assert "Failed to send ntfy notification [First: tomorrow]" in logs
-    assert "Failed to send ntfy notification [Second: tomorrow]" in logs
-    assert TOPIC not in logs
+    assert app_log.text.count("Failed to send ntfy notification [First: tomorrow]") == 1
+    assert "Failed to send ntfy notification [Second: tomorrow]" in app_log.text
+    assert TOPIC not in app_log.text
 
 
 def test_nothing_is_posted_when_ntfy_is_not_configured() -> None:
