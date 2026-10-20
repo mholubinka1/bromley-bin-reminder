@@ -13,10 +13,22 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+from subscription import GardenWasteSubscription
 
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 NEXT_COLLECTION_LABEL = "Next collection"
+SUBSCRIPTION_LABEL = "Subscription"
+RENEWAL_LABEL = "Renewal"
+GARDEN_WASTE_SERVICE = "Garden Waste"
+RENEWAL_DATE_PATTERN = re.compile(r"\d{1,2} [A-Za-z]+ \d{4}")
+# the page texts below are lowercase: they are compared with the lowercased section text
+RENEWS_AUTOMATICALLY_TEXT = "will renew automatically"
+IN_PROGRESS_TEXTS = (
+    "cancellation in progress",
+    "pending garden subscription",
+    "pending direct debit subscription",
+)
 
 
 class ScraperError(Exception):
@@ -86,18 +98,31 @@ def parse_date(date: str, now: datetime) -> datetime:
     return collection_date
 
 
-def find_next_collection_row(service: Tag, following_service: Tag | None) -> Tag | None:
-    """Find the service's own "Next collection" row, never one belonging to a later service."""
+def find_service_row(
+    service: Tag, following_service: Tag | None, label: str
+) -> Tag | None:
+    """Find the service's own row with this label, never one belonging to a later service."""
     for element in service.next_elements:
         if element is following_service:
             return None
         if (
             isinstance(element, Tag)
             and element.name == "dt"
-            and element.string == NEXT_COLLECTION_LABEL
+            and element.string == label
         ):
             return element
     return None
+
+
+def section_text(service: Tag) -> str | None:
+    """All the text of the service's own section, whitespace-normalised; None if unknown."""
+    section = service.find_parent("div", class_="waste-service-grid")
+    return " ".join(section.get_text().split()) if section else None
+
+
+def row_text(row: Tag) -> str:
+    value = row.find_next_sibling("dd")
+    return " ".join(value.get_text().split()) if value else ""
 
 
 class WasteworksScraper:
@@ -124,10 +149,12 @@ class WasteworksScraper:
         collections: list[WasteCollection] = []
         for service, following_service in zip(services, following_services):
             service_name = service.get_text(strip=True)
-            next_collection = find_next_collection_row(service, following_service)
+            next_collection = find_service_row(
+                service, following_service, NEXT_COLLECTION_LABEL
+            )
             if next_collection:
                 next_collection_date = parse_date(
-                    next_collection.find_next_sibling("dd").get_text(strip=True),
+                    row_text(next_collection),
                     now,
                 )
                 collections.append(
@@ -143,3 +170,62 @@ class WasteworksScraper:
         html = self._page_source.render(self._target_url)
         soup = BeautifulSoup(html, "html.parser")
         return self._extract_collections(soup, self._clock())
+
+    def get_garden_waste_subscription(self) -> GardenWasteSubscription | None:
+        html = self._page_source.render(self._target_url)
+        soup = BeautifulSoup(html, "html.parser")
+        services = soup.find_all("h3", class_="govuk-heading-m waste-service-name")
+        following_services = [*services[1:], None]
+        for service, following_service in zip(services, following_services):
+            if service.get_text(strip=True) == GARDEN_WASTE_SERVICE:
+                return self._read_subscription(service, following_service)
+        return None
+
+    def _read_subscription(
+        self, service: Tag, following_service: Tag | None
+    ) -> GardenWasteSubscription | None:
+        renewal_row = find_service_row(service, following_service, RENEWAL_LABEL)
+        subscription_row = find_service_row(
+            service, following_service, SUBSCRIPTION_LABEL
+        )
+        if renewal_row is None and subscription_row is None:
+            return None  # no subscription rows: not subscribed, nothing to warn about
+        if renewal_row is None or subscription_row is None:
+            logger.warning(
+                "Could not read the Garden Waste renewal: the Subscription or "
+                "Renewal row is missing."
+            )
+            return None
+        renewal_text = row_text(renewal_row)
+        renewal_date = self._parse_renewal_date(renewal_text)
+        if renewal_date is None:
+            logger.warning(
+                f"Could not read the Garden Waste renewal: no date in [{renewal_text}]."
+            )
+            return None
+        text = section_text(service)
+        if text is None:
+            logger.warning(
+                "Could not read the Garden Waste section: without it a pending "
+                "subscription or cancellation cannot be ruled out."
+            )
+            return None
+        text = text.lower()
+        return GardenWasteSubscription(
+            renewal_date=renewal_date,
+            subscription_text=row_text(subscription_row),
+            renews_automatically=RENEWS_AUTOMATICALLY_TEXT in text,
+            in_progress=any(marker in text for marker in IN_PROGRESS_TEXTS),
+        )
+
+    def _parse_renewal_date(self, renewal_text: str) -> datetime | None:
+        """The leading date of the Renewal row; trailing notes are not part of it."""
+        match = RENEWAL_DATE_PATTERN.match(renewal_text)
+        if match is None:
+            return None
+        try:
+            return datetime.strptime(match.group(), "%d %B %Y").replace(
+                tzinfo=self._clock().tzinfo
+            )
+        except ValueError:
+            return None

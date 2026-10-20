@@ -136,14 +136,15 @@ def test_run_reads_the_clock_once() -> None:
 
 
 @pytest.mark.parametrize(
-    ("period", "expected_failure_log"),
+    ("period", "expected_failure_logs"),
     [
-        (Period.TOMORROW, "Tomorrow reminder run failed."),
-        (Period.WEEK, "Week reminder run failed."),
+        (Period.TOMORROW, ["Tomorrow reminder run failed."]),
+        # the Week run also reads the subscription, which fails the same way
+        (Period.WEEK, ["Week reminder run failed.", "Week renewal check failed."]),
     ],
 )
 def test_run_that_cannot_scrape_is_logged_and_sends_nothing(
-    period: Period, expected_failure_log: str, app_log: pytest.LogCaptureFixture
+    period: Period, expected_failure_logs: list[str], app_log: pytest.LogCaptureFixture
 ) -> None:
     # Given the WasteWorks page cannot be scraped
     settings = parse_settings(yaml_settings())
@@ -162,8 +163,8 @@ def test_run_that_cannot_scrape_is_logged_and_sends_nothing(
 
     # Then the failure is logged against the period, nothing is sent and nothing propagates
     failures = [r for r in app_log.records if r.levelno == logging.ERROR]
-    assert [r.getMessage() for r in failures] == [expected_failure_log]
-    assert failures[0].exc_info is not None
+    assert [r.getMessage() for r in failures] == expected_failure_logs
+    assert all(r.exc_info is not None for r in failures)
     assert smtp.return_value.sendmail.call_count == 0
     assert post.call_count == 0
 
@@ -220,6 +221,9 @@ def test_run_whose_scrape_crosses_midnight_selects_for_the_day_after_the_scrape(
         def get_upcoming_collections(self) -> list[WasteCollection]:
             time_now["now"] = datetime(2026, 10, 3, 0, 3, tzinfo=LONDON)
             return [a_collection("Food Waste", day=4)]
+
+        def get_garden_waste_subscription(self) -> None:
+            return None
 
     # When the Tomorrow reminder run executes
     with patch("notify.SMTP") as smtp:

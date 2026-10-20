@@ -24,12 +24,20 @@ _Avoid_: alert
 The span a Reminder covers: Tomorrow (the nightly Reminder) or Week (the weekly Reminder, sent on Sundays). A Period decides which Waste Collections a Reminder includes and how that Reminder is worded.
 _Avoid_: schedule, frequency, mode
 
+**Garden Waste subscription**:
+The resident's paid subscription to the Garden Waste Service, with a price, a Renewal date, and whether it renews automatically by direct debit. A household without one has no Garden Waste section on the WasteWorks page. Modelled by the `GardenWasteSubscription` value.
+_Avoid_: garden bin plan, membership
+
+**Renewal notice**:
+The message, sent over each Channel on the weekly run, that a Garden Waste subscription is due for renewal within the next 30 days, or is overdue (past its Renewal date, which the WasteWorks page still shows for about four weeks). It is separate from a Reminder: it is not about collections and is sent even when no bin is collected that week. When the page says the subscription renews automatically, the notice says so to reassure the resident. No notice is sent while a cancellation or a pending subscription is shown.
+_Avoid_: expiry warning, renewal reminder
+
 **Reminder run**:
-One scheduled execution for a single Period: scrape the WasteWorks page, select that Period's Waste Collections, and send the Reminder when there are any. A failed run is logged and never stops later runs.
+One scheduled execution for a single Period: scrape the WasteWorks page, select that Period's Waste Collections, and send the Reminder when there are any. The Week run also checks the Garden Waste subscription and may send a Renewal notice. A failed run is logged and never stops later runs.
 _Avoid_: job, task
 
 **Channel**:
-A delivery route for Reminders: email (SMTP) or ntfy. Email is always configured; ntfy is optional. Channels are independent — one failing does not block the other.
+A delivery route for Reminders and Renewal notices: email (SMTP) or ntfy. Email is always configured; ntfy is optional. Channels are independent — one failing does not block the other.
 _Avoid_: transport, medium
 
 **ntfy**:
