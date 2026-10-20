@@ -17,6 +17,7 @@ class PeriodDetails:
     email_subject: str
     shows_collection_dates: bool
     collections_label: str
+    checks_garden_waste_subscription: bool = False
 
 
 @unique
@@ -34,6 +35,7 @@ class Period(Enum):
         email_subject="Weekly Collections",
         shows_collection_dates=True,
         collections_label="This week's collections",
+        checks_garden_waste_subscription=True,
     )
 
     @property
@@ -55,6 +57,10 @@ class Period(Enum):
     @property
     def collections_label(self) -> str:
         return self.value.collections_label
+
+    @property
+    def checks_garden_waste_subscription(self) -> bool:
+        return self.value.checks_garden_waste_subscription
 
     def select(
         self, collections: list[WasteCollection], today: datetime

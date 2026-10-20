@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from html import escape
 from typing import ClassVar
 
 from collection import WasteCollection, print_date
 from period import Period
+from subscription import GardenWasteSubscription
 
 GENERIC_EMOJI_TAG = "put_litter_in_its_place"
 SERVICE_NTFY_TAGS = {
@@ -47,6 +49,56 @@ def build_ntfy_notifications(
         _build_ntfy_notification(collection, period)
         for collection in upcoming_collections
     ]
+
+
+GARDEN_WASTE_SERVICE_NAME = "Garden Waste"
+RENEWAL_NTFY_PRIORITY = 3
+RENEWAL_EMAIL_SUBJECT = "Garden Waste subscription due for renewal"
+RENEWAL_EMAIL_TEMPLATE = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>{subject}</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; margin: 20px;">
+            <h1>{subject}</h1>
+            <p>Your Garden Waste subscription is due for renewal on {renewal_date}.</p>
+            <p>Subscription: {subscription_text}</p>
+        </body>
+        </html>
+        """
+
+
+def print_renewal_date(date: datetime) -> str:
+    return f"{date.day} {date:%B %Y}"
+
+
+def build_renewal_ntfy_notification(
+    subscription: GardenWasteSubscription,
+) -> NtfyNotification:
+    renewal_date = print_renewal_date(subscription.renewal_date)
+    return NtfyNotification(
+        title=f"{GARDEN_WASTE_SERVICE_NAME}: due for renewal",
+        message=(
+            f"Subscription is due for renewal on {renewal_date} "
+            f"({subscription.subscription_text})."
+        ),
+        priority=RENEWAL_NTFY_PRIORITY,
+        tags=[emoji_tag(GARDEN_WASTE_SERVICE_NAME)],
+    )
+
+
+def build_renewal_email(subscription: GardenWasteSubscription) -> MIMEMultipart:
+    msg = MIMEMultipart()
+    msg["Subject"] = RENEWAL_EMAIL_SUBJECT
+    body = RENEWAL_EMAIL_TEMPLATE.format(
+        subject=RENEWAL_EMAIL_SUBJECT,
+        renewal_date=print_renewal_date(subscription.renewal_date),
+        subscription_text=escape(subscription.subscription_text),
+    )
+    msg.attach(MIMEText(body, "html"))
+    return msg
 
 
 EMAIL_PRIORITY_HEADERS = {"X-Priority": "1", "Importance": "high"}

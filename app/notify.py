@@ -13,8 +13,11 @@ from notification import (
     NtfyNotification,
     WasteCollectionNotification,
     build_ntfy_notifications,
+    build_renewal_email,
+    build_renewal_ntfy_notification,
 )
 from period import Period
+from subscription import GardenWasteSubscription
 
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
@@ -80,6 +83,10 @@ class Channel(Protocol):
         self, collections: list[WasteCollection], now: datetime, period: Period
     ) -> None: ...
 
+    def send_renewal(
+        self, subscription: GardenWasteSubscription, now: datetime
+    ) -> None: ...
+
 
 class EmailChannel:
     _client: SMTPClient
@@ -97,18 +104,31 @@ class EmailChannel:
         self, collections: list[WasteCollection], now: datetime, period: Period
     ) -> None:
         try:
-            self._send_email(WasteCollectionNotification(collections, now, period))
+            self._send_email(
+                WasteCollectionNotification(collections, now, period).email,
+                "Sent notification e-mail to [{recipients}]",
+            )
         except Exception:
             logger.exception(f"Failed to send {period.name.lower()} email reminder.")
 
+    def send_renewal(
+        self, subscription: GardenWasteSubscription, now: datetime
+    ) -> None:
+        try:
+            self._send_email(
+                build_renewal_email(subscription),
+                "Sent renewal notice e-mail to [{recipients}]",
+            )
+        except Exception:
+            logger.exception("Failed to send renewal e-mail notice.")
+
     @retry()
-    def _send_email(self, notification: WasteCollectionNotification) -> None:
-        msg = notification.email
+    def _send_email(self, msg: MIMEMultipart, sent_log_template: str) -> None:
         msg["From"] = self._sender
         recipients = ", ".join(self._email_addresses)
         msg["To"] = recipients
         self._client.send_mail(self._sender, self._email_addresses, message=msg)
-        logger.info(f"Sent notification e-mail to [{recipients}]")
+        logger.info(sent_log_template.format(recipients=recipients))
 
 
 class NtfyChannel:
@@ -134,6 +154,17 @@ class NtfyChannel:
                 )
             else:
                 logger.info(f"Sent ntfy notification [{notification.title}]")
+
+    def send_renewal(
+        self, subscription: GardenWasteSubscription, now: datetime
+    ) -> None:
+        try:
+            notification = build_renewal_ntfy_notification(subscription)
+            self._publish(notification)
+        except Exception:
+            logger.exception("Failed to send ntfy renewal notice.")
+        else:
+            logger.info(f"Sent ntfy notification [{notification.title}]")
 
     @retry()
     def _publish(self, notification: NtfyNotification) -> None:

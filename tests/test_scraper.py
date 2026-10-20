@@ -2,7 +2,13 @@ from datetime import datetime
 
 import pytest
 from scraper import ScraperError, WasteworksScraper
-from support import FRIDAY_EVENING, LONDON, FixturePageSource, a_wasteworks_page
+from support import (
+    FRIDAY_EVENING,
+    LONDON,
+    FixturePageSource,
+    a_garden_waste_page,
+    a_wasteworks_page,
+)
 
 WASTEWORKS_URL = "https://example.com/waste"
 
@@ -243,3 +249,48 @@ def test_scraper_fails_when_the_page_cannot_be_rendered() -> None:
     # Then the render failure reaches the caller
     with pytest.raises(ScraperError):
         scraper.get_upcoming_collections()
+
+
+def test_scraper_reads_the_garden_waste_subscription_with_a_trailing_renewal_note() -> (
+    None
+):
+    # Given a Garden Waste section whose Renewal row carries a trailing note
+    page = a_garden_waste_page(renewal="12 June 2027, soon due for renewal.")
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then the date is the leading date and the price text is read as shown
+    assert subscription is not None
+    assert subscription.renewal_date == datetime(2027, 6, 12, tzinfo=LONDON)
+    assert subscription.subscription_text == "£80.00 per year (1 bin)"
+
+
+def test_scraper_reads_the_garden_waste_subscription_without_a_trailing_note() -> None:
+    # Given a Garden Waste section whose Renewal row is only a date
+    page = a_garden_waste_page(renewal="12 June 2027")
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then the date is read
+    assert subscription is not None
+    assert subscription.renewal_date == datetime(2027, 6, 12, tzinfo=LONDON)
+
+
+def test_scraper_finds_no_subscription_without_a_garden_waste_section() -> None:
+    # Given a page listing only food waste
+    page = a_wasteworks_page(("Food Waste", "Saturday, 3rd October"))
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    # Then there is none
+    assert scraper.get_garden_waste_subscription() is None

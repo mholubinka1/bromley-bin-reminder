@@ -9,12 +9,15 @@ from common.settings import ApplicationSettings
 from notify import Channel
 from period import Period
 from schedule import Scheduler
+from subscription import GardenWasteSubscription
 
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 
 class CollectionSource(Protocol):
     def get_upcoming_collections(self) -> list[WasteCollection]: ...
+
+    def get_garden_waste_subscription(self) -> GardenWasteSubscription | None: ...
 
 
 def run_reminder(
@@ -37,6 +40,24 @@ def run_reminder(
             send_reminders(channels, selected, now, period)
     except Exception:
         logger.exception(f"{period_name} reminder run failed.")
+    if period.checks_garden_waste_subscription:
+        try:
+            send_renewal_notice_if_due(scraper, channels, clock)
+        except Exception:
+            logger.exception(f"{period_name} renewal check failed.")
+
+
+def send_renewal_notice_if_due(
+    scraper: CollectionSource,
+    channels: list[Channel],
+    clock: Callable[[], datetime],
+) -> None:
+    now = clock()
+    subscription = scraper.get_garden_waste_subscription()
+    if subscription is not None and subscription.renewal_notice_due(now):
+        logger.info("Sending Garden Waste renewal notice.")
+        for channel in channels:
+            channel.send_renewal(subscription, now)
 
 
 def schedule_reminder_runs(

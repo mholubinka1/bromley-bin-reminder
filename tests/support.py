@@ -113,15 +113,24 @@ def sent_email(smtp: MagicMock) -> SentEmail:
 
 
 class FakeScraper:
-    def __init__(self, collections: list[WasteCollection]) -> None:
+    def __init__(
+        self, collections: list[WasteCollection], subscription: Any = None
+    ) -> None:
         self._collections = collections
+        self._subscription = subscription
 
     def get_upcoming_collections(self) -> list[WasteCollection]:
         return self._collections
 
+    def get_garden_waste_subscription(self) -> Any:
+        return self._subscription
+
 
 class FailingScraper:
     def get_upcoming_collections(self) -> list[WasteCollection]:
+        raise RuntimeError("WasteWorks page could not be rendered")
+
+    def get_garden_waste_subscription(self) -> Any:
         raise RuntimeError("WasteWorks page could not be rendered")
 
 
@@ -155,17 +164,43 @@ def a_wasteworks_page(*services: tuple[str, str | None]) -> str:
     )
 
 
+def a_garden_waste_page(
+    renewal: str, subscription: str = "£80.00 per year (1 bin)"
+) -> str:
+    """Render a WasteWorks page whose Garden Waste section is laid out like Bromley's template."""
+    return (
+        '<html><body><div class="govuk-grid-row">'
+        '<div class="govuk-grid-column-two-thirds">'
+        '<div class="waste-service-grid">'
+        '<div class="waste-service-grid--service-name">'
+        '<h3 class="govuk-heading-m waste-service-name">Garden Waste</h3>'
+        "</div>"
+        '<dl class="govuk-summary-list">'
+        "<div><dt>Frequency</dt><dd>Every week</dd></div>"
+        "<div><dt>Next collection</dt><dd>Tuesday, 6th October</dd></div>"
+        "<div><dt>Last collection</dt><dd>Tuesday, 29th September</dd></div>"
+        f"<div><dt>Subscription</dt><dd>\n  {subscription}\n</dd></div>"
+        f"<div><dt>Renewal</dt><dd>{renewal}</dd></div>"
+        "</dl></div>"
+        "</div></div></body></html>"
+    )
+
+
 class RecordingChannel:
     def __init__(self, name: str, sent: list[str]) -> None:
         self._name = name
         self._sent = sent
         self.reminders: list[tuple[list[WasteCollection], datetime, Period]] = []
+        self.renewals: list[tuple[Any, datetime]] = []
 
     def send(
         self, collections: list[WasteCollection], now: datetime, period: Period
     ) -> None:
         self.reminders.append((collections, now, period))
         self._sent.append(self._name)
+
+    def send_renewal(self, subscription: Any, now: datetime) -> None:
+        self.renewals.append((subscription, now))
 
 
 class FixturePageSource:
