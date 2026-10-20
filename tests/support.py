@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 from collection import WasteCollection
 from period import Period
+from subscription import GardenWasteSubscription
 
 LONDON = ZoneInfo("Europe/London")
 FRIDAY_EVENING = datetime(2026, 10, 2, 18, 0, tzinfo=LONDON)
@@ -114,7 +115,9 @@ def sent_email(smtp: MagicMock) -> SentEmail:
 
 class FakeScraper:
     def __init__(
-        self, collections: list[WasteCollection], subscription: Any = None
+        self,
+        collections: list[WasteCollection],
+        subscription: GardenWasteSubscription | None = None,
     ) -> None:
         self._collections = collections
         self._subscription = subscription
@@ -122,7 +125,7 @@ class FakeScraper:
     def get_upcoming_collections(self) -> list[WasteCollection]:
         return self._collections
 
-    def get_garden_waste_subscription(self) -> Any:
+    def get_garden_waste_subscription(self) -> GardenWasteSubscription | None:
         return self._subscription
 
 
@@ -201,7 +204,7 @@ class RecordingChannel:
         self._name = name
         self._sent = sent
         self.reminders: list[tuple[list[WasteCollection], datetime, Period]] = []
-        self.renewals: list[tuple[Any, datetime]] = []
+        self.renewals: list[tuple[GardenWasteSubscription, datetime]] = []
 
     def send(
         self, collections: list[WasteCollection], now: datetime, period: Period
@@ -209,7 +212,9 @@ class RecordingChannel:
         self.reminders.append((collections, now, period))
         self._sent.append(self._name)
 
-    def send_renewal(self, subscription: Any, now: datetime) -> None:
+    def send_renewal(
+        self, subscription: GardenWasteSubscription, now: datetime
+    ) -> None:
         self.renewals.append((subscription, now))
 
 

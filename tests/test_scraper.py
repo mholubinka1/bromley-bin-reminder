@@ -305,6 +305,24 @@ def test_scraper_reads_that_the_subscription_renews_automatically_by_direct_debi
     assert subscription.renews_automatically
 
 
+def test_scraper_reads_automatic_renewal_whatever_the_capitalisation() -> None:
+    # Given a Garden Waste section whose automatic renewal sentence is capitalised differently
+    page = a_garden_waste_page(
+        renewal="12 June 2027, soon due for renewal.",
+        status=DIRECT_DEBIT_STATUS.upper(),
+    )
+    scraper = WasteworksScraper(
+        FixturePageSource(page), WASTEWORKS_URL, clock=lambda: FRIDAY_EVENING
+    )
+
+    # When the Garden Waste subscription is read
+    subscription = scraper.get_garden_waste_subscription()
+
+    # Then it still renews automatically
+    assert subscription is not None
+    assert subscription.renews_automatically
+
+
 def test_scraper_reads_that_the_subscription_does_not_renew_automatically() -> None:
     # Given a Garden Waste section with no automatic renewal sentence
     page = a_garden_waste_page(renewal="12 June 2027, soon due for renewal.")
