@@ -1,5 +1,7 @@
 # Issues: feature/garden-waste-renewal-notice
 
+> Work complete — PR ready to merge.
+
 ## A due renewal reaches the resident on Sunday
 
 **Blocked by**: None
@@ -19,13 +21,13 @@ due, even in a week with no collections. The nightly run does nothing new.
 
 ### Acceptance criteria
 
-- [ ] Given a subscription renewing in 20 days, when the Sunday run happens, then the email and the ntfy push go out with the date and price
-- [ ] Given a renewal 31 days away, when the Sunday run happens, then nothing is sent
-- [ ] Given a renewal exactly 30 days away, when the Sunday run happens, then a notice is sent
-- [ ] Given a page with no Garden Waste section, when the Sunday run happens, then nothing is sent
-- [ ] Given the Tomorrow run, then no notice is sent
-- [ ] Given no bin is collected that week, when the Sunday run happens, then the notice is still sent
-- [ ] Given a Renewal row with a trailing note such as ", soon due for renewal.", then the date is still read
+- [x] Given a subscription renewing in 20 days, when the Sunday run happens, then the email and the ntfy push go out with the date and price
+- [x] Given a renewal 31 days away, when the Sunday run happens, then nothing is sent
+- [x] Given a renewal exactly 30 days away, when the Sunday run happens, then a notice is sent
+- [x] Given a page with no Garden Waste section, when the Sunday run happens, then nothing is sent
+- [x] Given the Tomorrow run, then no notice is sent
+- [x] Given no bin is collected that week, when the Sunday run happens, then the notice is still sent
+- [x] Given a Renewal row with a trailing note such as ", soon due for renewal.", then the date is still read
 
 ---
 
@@ -42,8 +44,8 @@ debit, and the due notice on both Channels says so to reassure the resident.
 
 ### Acceptance criteria
 
-- [ ] Given the page says the subscription renews automatically, when a due notice is sent, then the email and the ntfy push say so
-- [ ] Given a due subscription that does not renew automatically, when a notice is sent, then it has no such line
+- [x] Given the page says the subscription renews automatically, when a due notice is sent, then the email and the ntfy push say so
+- [x] Given a due subscription that does not renew automatically, when a notice is sent, then it has no such line
 
 ---
 
@@ -61,8 +63,8 @@ weeks). The ntfy push for an overdue subscription has a higher priority.
 
 ### Acceptance criteria
 
-- [ ] Given a Renewal date that has passed, when the Sunday run happens, then an overdue notice goes out on both Channels
-- [ ] Given an overdue notice on ntfy, then its priority is higher than a due notice's
+- [x] Given a Renewal date that has passed, when the Sunday run happens, then an overdue notice goes out on both Channels
+- [x] Given an overdue notice on ntfy, then its priority is higher than a due notice's
 
 ---
 
@@ -81,9 +83,9 @@ the Sunday run fail independently.
 
 ### Acceptance criteria
 
-- [ ] Given "Cancellation in progress", or a pending subscription or direct debit, when the Sunday run happens, then no notice is sent
-- [ ] Given a Garden Waste section whose Renewal row is missing or unparseable, when the Sunday run happens, then nothing is sent and a warning is logged
-- [ ] Given the subscription read fails, when the Sunday run happens, then the collection Reminder is still sent
-- [ ] Given the collection scrape fails, when the Sunday run happens, then the notice is still sent
+- [x] Given "Cancellation in progress", or a pending subscription or direct debit, when the Sunday run happens, then no notice is sent
+- [x] Given a Garden Waste section whose Renewal row is missing or unparseable, when the Sunday run happens, then nothing is sent and a warning is logged
+- [x] Given the subscription read fails, when the Sunday run happens, then the collection Reminder is still sent
+- [x] Given the collection scrape fails, when the Sunday run happens, then the notice is still sent
 
 ---
