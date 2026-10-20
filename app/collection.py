@@ -1,11 +1,9 @@
-import logging.config
 from dataclasses import dataclass
 from datetime import datetime
 from logging import Logger, getLogger
 
-from common.logging import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME
 
-logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 

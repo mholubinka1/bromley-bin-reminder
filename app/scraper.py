@@ -1,4 +1,3 @@
-import logging.config
 import os
 import re
 from collections.abc import Callable
@@ -9,13 +8,12 @@ from typing import Protocol
 from bs4 import BeautifulSoup, Tag
 from collection import WasteCollection
 from common.decorators import retry
-from common.logging import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
-logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 NEXT_COLLECTION_LABEL = "Next collection"

@@ -1,4 +1,3 @@
-import logging.config
 from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import Any
@@ -6,9 +5,8 @@ from zoneinfo import ZoneInfo
 
 import pytz
 import yaml
-from common.logging import APP_LOGGER_NAME, config
+from common.logging import APP_LOGGER_NAME
 
-logging.config.dictConfig(config)
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
 DEFAULT_DAILY_POLL_TIME = "18:00"
