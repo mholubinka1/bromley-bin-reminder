@@ -119,7 +119,7 @@ def section_text(service: Tag) -> str:
     if section is None:
         logger.warning(
             f"Could not find the section of {service.get_text(strip=True)}; "
-            "notes such as a pending subscription may be missed."
+            "a pending subscription or cancellation will not be detected."
         )
         return ""
     return " ".join(section.get_text().split())
