@@ -4,7 +4,7 @@ import subprocess
 import sys
 from collections.abc import Iterator
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import common.logging
 import main
@@ -159,6 +159,20 @@ def test_log_file_rolls_over_and_keeps_a_bounded_number_of_backups(
     assert names == [LOG_FILE_NAME, f"{LOG_FILE_NAME}.1", f"{LOG_FILE_NAME}.2"]
 
 
+def test_the_log_directory_defaults_to_the_log_dir_environment_variable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, restore_app_logger: None
+) -> None:
+    # Given LOG_DIR names a writable directory
+    monkeypatch.setenv(LOG_DIR_ENV, str(tmp_path))
+
+    # When logging is configured without naming a directory
+    configure_logging()
+
+    # Then the log file is created there
+    logging.getLogger(APP_LOGGER_NAME).info("hello bins")
+    assert (tmp_path / LOG_FILE_NAME).exists()
+
+
 def test_main_configures_logging_before_it_logs_or_reads_arguments() -> None:
     # Given a main() whose argument parsing stops the run
     calls = MagicMock()
@@ -174,10 +188,10 @@ def test_main_configures_logging_before_it_logs_or_reads_arguments() -> None:
             main.main()
 
     # Then logging was configured before the first log line and before arguments are read
-    assert [call[0] for call in calls.mock_calls] == [
-        "configure_logging",
-        "logger.info",
-        "parse_args",
+    assert calls.mock_calls == [
+        call.configure_logging(),
+        call.logger.info("Starting bromley-bin-reminder."),
+        call.parse_args(),
     ]
 
 
