@@ -13,7 +13,7 @@ dependencies = [
     "schedule>=1.2.2,<2.0.0",
     "pytz>=2026.1,<2027.0",
     "webdriver-manager>=4.0.2,<5.0.0",
-    "watchdog>=6.0.0,<7.0.0",
+    "watchdog>=6.0.0,<8.0.0",
     "pyyaml>=6.0.3,<7.0.0",
 ]
 
