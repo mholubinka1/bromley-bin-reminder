@@ -1,3 +1,5 @@
+> Work complete — PR ready to merge.
+
 # Issues: bugfix/firefox-quit-on-render-failure
 
 ## Firefox is always shut down when a page render fails
