@@ -17,6 +17,7 @@ from subscription import GardenWasteSubscription
 
 logger: Logger = getLogger(APP_LOGGER_NAME)
 
+RENDER_TIMEOUT_SECONDS = 300
 NEXT_COLLECTION_LABEL = "Next collection"
 SUBSCRIPTION_LABEL = "Subscription"
 RENEWAL_LABEL = "Renewal"
@@ -60,22 +61,29 @@ class SeleniumPageSource:
     @retry()
     def render(self, url: str) -> str:
         driver = self._create_firefox_web_driver()
-        driver.get(url)
         try:
-            wait = WebDriverWait(driver, 300)
+            driver.get(url)
+            wait = WebDriverWait(driver, RENDER_TIMEOUT_SECONDS)
             _ = wait.until(
                 EC.presence_of_element_located(
                     (By.XPATH, "//*[@class='govuk-heading-m waste-service-name']")
                 )
             )
             logger.info("Rendered WasteWorks webpage.")
-            page_source = driver.page_source
-            driver.quit()
-            return page_source
+            return driver.page_source
         except Exception:
-            driver.quit()
             logger.exception(f"Failed to render Wasteworks page: {url}")
             raise ScraperError(f"Failed to render Wasteworks page: {url}")
+        finally:
+            self._shut_down(driver)
+
+    def _shut_down(self, driver: webdriver.Firefox) -> None:
+        try:
+            driver.quit()
+        except Exception:
+            logger.warning(
+                "Failed to shut down Firefox: it may still be running.", exc_info=True
+            )
 
 
 def parse_date(date: str, now: datetime) -> datetime:

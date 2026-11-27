@@ -1,8 +1,12 @@
 import logging
+import time
+from collections.abc import Callable
 from datetime import datetime
 
 import pytest
-from scraper import ScraperError, WasteworksScraper
+import scraper
+from scraper import ScraperError, SeleniumPageSource, WasteworksScraper
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
 from support import (
     DIRECT_DEBIT_STATUS,
     FRIDAY_EVENING,
@@ -13,6 +17,60 @@ from support import (
 )
 
 WASTEWORKS_URL = "https://example.com/waste"
+
+
+RENDERED_PAGE = (
+    "<html><h3 class='govuk-heading-m waste-service-name'>Food Waste</h3></html>"
+)
+
+
+class FakeFirefox:
+    """Stands in for a Firefox browser, recording whether it was shut down."""
+
+    def __init__(
+        self,
+        load_error: Exception | None = None,
+        heading_present: bool = True,
+        quit_error: Exception | None = None,
+    ) -> None:
+        self._load_error = load_error
+        self._heading_present = heading_present
+        self._quit_error = quit_error
+        self.page_source = RENDERED_PAGE
+        self.quit_count = 0
+
+    def get(self, url: str) -> None:
+        if self._load_error is not None:
+            raise self._load_error
+
+    def find_element(self, by: str, value: str) -> object:
+        if not self._heading_present:
+            raise NoSuchElementException(value)
+        return object()
+
+    def quit(self) -> None:
+        self.quit_count += 1
+        if self._quit_error is not None:
+            raise self._quit_error
+
+
+class FakeFirefoxPageSource(SeleniumPageSource):
+    """A Selenium page source whose every attempt starts a new fake Firefox."""
+
+    def __init__(self, new_firefox: Callable[[], FakeFirefox]) -> None:
+        self._new_firefox = new_firefox
+        self.started: list[FakeFirefox] = []
+
+    def _create_firefox_web_driver(self) -> FakeFirefox:  # type: ignore[override]
+        firefox = self._new_firefox()
+        self.started.append(firefox)
+        return firefox
+
+
+@pytest.fixture
+def instant_waits(monkeypatch: pytest.MonkeyPatch) -> None:
+    # the retry delay and the wait's polling would otherwise sleep for real
+    monkeypatch.setattr(time, "sleep", lambda _seconds: None)
 
 
 class UnrenderablePageSource:
@@ -492,3 +550,73 @@ def test_scraper_finds_no_subscription_without_a_garden_waste_section() -> None:
     # When the Garden Waste subscription is read
     # Then there is none
     assert scraper.get_garden_waste_subscription() is None
+
+
+@pytest.mark.usefixtures("instant_waits")
+def test_every_firefox_is_shut_down_when_the_page_never_loads() -> None:
+    # Given the WasteWorks site cannot be reached on any attempt
+    page_source = FakeFirefoxPageSource(
+        lambda: FakeFirefox(load_error=WebDriverException("dnsNotFound"))
+    )
+
+    # When the page is rendered
+    with pytest.raises(ScraperError):
+        page_source.render(WASTEWORKS_URL)
+
+    # Then every Firefox started for an attempt was shut down
+    assert len(page_source.started) == 3
+    assert [firefox.quit_count for firefox in page_source.started] == [1, 1, 1]
+
+
+@pytest.mark.usefixtures("instant_waits")
+def test_firefox_is_shut_down_when_the_page_never_shows_its_services(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given a page that loads but never shows a waste service, and no time to wait for one
+    monkeypatch.setattr(scraper, "RENDER_TIMEOUT_SECONDS", 0)
+    page_source = FakeFirefoxPageSource(lambda: FakeFirefox(heading_present=False))
+
+    # When the page is rendered
+    with pytest.raises(ScraperError):
+        page_source.render(WASTEWORKS_URL)
+
+    # Then every Firefox started for an attempt was shut down
+    assert [firefox.quit_count for firefox in page_source.started] == [1, 1, 1]
+
+
+def test_firefox_is_shut_down_once_after_rendering_the_page() -> None:
+    # Given a page that loads and shows its waste services
+    page_source = FakeFirefoxPageSource(FakeFirefox)
+
+    # When the page is rendered
+    html = page_source.render(WASTEWORKS_URL)
+
+    # Then its source is returned and its one Firefox was shut down once
+    assert html == RENDERED_PAGE
+    assert [firefox.quit_count for firefox in page_source.started] == [1]
+
+
+@pytest.mark.usefixtures("instant_waits")
+def test_a_failed_shutdown_is_logged_without_hiding_the_render_failure(
+    app_log: pytest.LogCaptureFixture,
+) -> None:
+    # Given a site that cannot be reached and a Firefox that fails to shut down
+    page_source = FakeFirefoxPageSource(
+        lambda: FakeFirefox(
+            load_error=WebDriverException("dnsNotFound"),
+            quit_error=WebDriverException("geckodriver gone"),
+        )
+    )
+
+    # When the page is rendered
+    # Then the render failure is still what is raised
+    with pytest.raises(ScraperError):
+        page_source.render(WASTEWORKS_URL)
+
+    # And each failed shutdown is logged as a warning
+    shutdown_warnings = [
+        r
+        for r in app_log.records
+        if r.levelno == logging.WARNING and "shut down Firefox" in r.getMessage()
+    ]
+    assert len(shutdown_warnings) == 3
